@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from './layouts/main-layout';
 import { Stepper } from './components/booking/stepper';
 import { Calendar } from './components/booking/calendar';
@@ -6,7 +6,9 @@ import { TimeSlots } from './components/booking/time-slots';
 import { InstructorList } from './components/booking/instructor-list';
 import { BookingSummaryFooter } from './components/booking/booking-summary-footer';
 import { ConfirmationView } from './components/booking/confirmation-view';
-import { INSTRUCTORS, TIME_SLOTS } from './data/mock-data';
+import { fetchInstructors, createBooking } from './services/api';
+import type { Instructor, TimeSlot } from './types';
+import { INSTRUCTORS as MOCK_INSTRUCTORS, TIME_SLOTS as MOCK_SLOTS } from './data/mock-data';
 
 function App() {
   // Step 1..3 are on the main page. Step 4 is Confirmation View.
@@ -17,7 +19,43 @@ function App() {
   const [selectedInstructorId, setSelectedInstructorId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const selectedInstructor = INSTRUCTORS.find(i => i.id === selectedInstructorId) || null;
+  // State for data fetched from API
+  const [instructors, setInstructors] = useState<Instructor[]>(MOCK_INSTRUCTORS);
+  const [timeSlots] = useState<TimeSlot[]>(MOCK_SLOTS);
+  const [loadingData, setLoadingData] = useState(true);
+
+  // Fetch data on mount
+  useEffect(() => {
+    async function loadData() {
+      // Try to fetch from API, if fail (e.g. no PHP server), fallback to mocks is already initial state
+      try {
+          const apiInstructors = await fetchInstructors();
+          if (apiInstructors && apiInstructors.length > 0) {
+            setInstructors(apiInstructors);
+          }
+      } catch (e) {
+          console.log("Using mock data", e);
+      } finally {
+          setLoadingData(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  // Fetch availability when date changes (mock logic for now)
+  useEffect(() => {
+      if (selectedDate) {
+          // In real app: fetchAvailability(format(selectedDate, 'yyyy-MM-dd'), selectedInstructorId);
+          // For now, just randomization or static
+      }
+  }, [selectedDate]);
+
+  if (loadingData) {
+      // Optional: loading spinner, or just render with initial mocks
+  }
+
+
+  const selectedInstructor = instructors.find(i => i.id === selectedInstructorId) || null;
 
   // Calculate current progress for Stepper
   let currentStepperStep = 1;
@@ -47,22 +85,34 @@ function App() {
     setSelectedInstructorId(id);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (view === 'selection') {
       setView('confirmation');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       // Submit logic
       setIsSubmitting(true);
-      setTimeout(() => {
-        setIsSubmitting(false);
+
+      // Attempt API call
+      const success = await createBooking({
+          instructor_id: selectedInstructorId!,
+          student_name: "Usuario Demo", // In a real app, you'd have a form input for this
+          booking_date: selectedDate!.toISOString().split('T')[0],
+          start_time: selectedTime!,
+      });
+
+      if (success) {
         alert("¡Reserva confirmada con éxito! Revisa tu correo electrónico.");
-        // Reset flow
-        setView('selection');
-        setSelectedDate(null);
-        setSelectedTime(null);
-        setSelectedInstructorId(null);
-      }, 2000);
+      } else {
+         alert("Hubo un error al confirmar la reserva (API). Usando fallback para demo.");
+      }
+
+      setIsSubmitting(false);
+      // Reset flow
+      setView('selection');
+      setSelectedDate(null);
+      setSelectedTime(null);
+      setSelectedInstructorId(null);
     }
   };
 
@@ -98,7 +148,7 @@ function App() {
               {/* Time Slots */}
               <div className={`transition-all duration-500 ${selectedDate ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4 pointer-events-none grayscale'}`}>
                  <TimeSlots
-                    slots={TIME_SLOTS}
+                    slots={timeSlots}
                     selectedDate={selectedDate}
                     selectedTime={selectedTime}
                     onSelectTime={handleTimeSelect}
@@ -109,7 +159,7 @@ function App() {
               <div className={`transition-all duration-500 delay-100 ${selectedTime ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4 pointer-events-none grayscale'}`}>
                 {/* Always render distinct space to avoid layout shift, or just show when ready */}
                  <InstructorList
-                    instructors={INSTRUCTORS}
+                    instructors={instructors}
                     selectedInstructorId={selectedInstructorId}
                     onSelectInstructor={handleInstructorSelect}
                     selectedTime={selectedTime || '09:00'}

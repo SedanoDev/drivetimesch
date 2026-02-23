@@ -7,85 +7,170 @@ Este proyecto es una solución completa para la gestión de reservas, construida
 
 ---
 
-## 📋 Requisitos Previos
+## 📋 Guía de Instalación en Ubuntu (Paso a Paso)
 
-Para ejecutar este proyecto necesitarás:
+Sigue estos comandos para configurar un servidor Ubuntu limpio con todo lo necesario.
 
-1.  **Node.js** (v18+): Para compilar el frontend.
-2.  **Servidor Web (Apache/Nginx)**: Recomendado XAMPP, MAMP, o un servidor LAMP estándar.
-3.  **PHP** (v7.4+): Con extensión `pdo_mysql` habilitada.
-4.  **MySQL/MariaDB**: Base de datos.
+### 1. Instalar el Stack LAMP (Linux, Apache, MySQL, PHP)
 
----
+Actualiza los repositorios e instala los paquetes necesarios:
 
-## 🚀 Instalación y Despliegue
+```bash
+sudo apt update
+sudo apt install apache2 mysql-server php php-mysql php-pdo nodejs npm -y
+```
 
-### 1. Configuración de la Base de Datos (MySQL)
+Verifica las versiones instaladas:
+```bash
+php -v
+mysql --version
+node -v
+```
 
-1.  Abre tu herramienta de gestión de base de datos (phpMyAdmin, MySQL Workbench, DBeaver).
-2.  Crea una base de datos llamada `drivetime`.
-3.  Ejecuta el script SQL ubicado en `database/schema_mysql.sql`.
-    *   Esto creará las tablas `instructors` y `bookings` e insertará datos de ejemplo.
+### 2. Configurar la Base de Datos (MySQL)
 
-### 2. Configuración del Backend (PHP)
+1.  Inicia la configuración segura de MySQL (opcional pero recomendado):
+    ```bash
+    sudo mysql_secure_installation
+    ```
 
-1.  Copia la carpeta `drivetime-backend` a tu directorio raíz del servidor web (ej: `htdocs` en XAMPP o `/var/www/html` en Linux).
-2.  Edita el archivo `drivetime-backend/config.php` y actualiza las credenciales de la base de datos:
+2.  Entra a la consola de MySQL:
+    ```bash
+    sudo mysql
+    ```
+
+3.  Ejecuta los siguientes comandos SQL para crear la base de datos y el usuario:
+
+    ```sql
+    -- Crear base de datos
+    CREATE DATABASE drivetime;
+
+    -- Crear usuario (cambia 'tu_password_segura' por una real)
+    CREATE USER 'drivetime_user'@'localhost' IDENTIFIED BY 'tu_password_segura';
+
+    -- Dar permisos
+    GRANT ALL PRIVILEGES ON drivetime.* TO 'drivetime_user'@'localhost';
+    FLUSH PRIVILEGES;
+    EXIT;
+    ```
+
+4.  Importa el esquema de la base de datos:
+    Assuming you have cloned the repo to `~/drivetime`:
+    ```bash
+    sudo mysql -u drivetime_user -p drivetime < ~/drivetime/database/schema_mysql.sql
+    ```
+
+### 3. Configurar el Backend (PHP)
+
+1.  Copia los archivos del backend al directorio web de Apache:
+    ```bash
+    sudo mkdir -p /var/www/html/api
+    sudo cp -r ~/drivetime/drivetime-backend/* /var/www/html/
+    ```
+
+2.  Configura la conexión a la base de datos:
+    Edita el archivo `config.php`:
+    ```bash
+    sudo nano /var/www/html/config.php
+    ```
+    Actualiza con los datos que creaste en el paso 2:
     ```php
     $host = 'localhost';
     $db_name = 'drivetime';
-    $username = 'root'; // Tu usuario
-    $password = '';     // Tu contraseña
+    $username = 'drivetime_user';
+    $password = 'tu_password_segura';
     ```
-3.  Verifica que la API funciona accediendo a: `http://localhost/drivetime-backend/api/instructors.php`. Deberías ver un JSON con los instructores.
 
-### 3. Configuración del Frontend (React)
-
-1.  Navega al directorio del frontend:
+3.  Asegura los permisos correctos:
     ```bash
-    cd drivetime-frontend
+    sudo chown -R www-data:www-data /var/www/html
+    sudo chmod -R 755 /var/www/html
     ```
-2.  Instala las dependencias:
+
+### 4. Configurar Apache
+
+1.  Habilita el módulo `rewrite` para que funcionen las rutas amigables:
     ```bash
+    sudo a2enmod rewrite
+    ```
+
+2.  Edita la configuración del sitio por defecto para permitir `.htaccess`:
+    ```bash
+    sudo nano /etc/apache2/sites-available/000-default.conf
+    ```
+    Añade el bloque `<Directory>` dentro de `<VirtualHost>`:
+    ```apache
+    <VirtualHost *:80>
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html
+
+        <Directory /var/www/html>
+            Options Indexes FollowSymLinks
+            AllowOverride All
+            Require all granted
+        </Directory>
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+    </VirtualHost>
+    ```
+
+3.  Reinicia Apache:
+    ```bash
+    sudo systemctl restart apache2
+    ```
+
+### 5. Compilar y Desplegar el Frontend (React)
+
+1.  Ve al directorio del frontend e instala las dependencias:
+    ```bash
+    cd ~/drivetime/drivetime-frontend
     npm install
     ```
-3.  Crea un archivo `.env` en la raíz de `drivetime-frontend` para apuntar a tu API PHP local:
-    ```env
-    VITE_API_URL=http://localhost/drivetime-backend/api
-    ```
-4.  Para desarrollo local (con Hot Reload):
+
+2.  Configura la URL de la API para producción:
+    Crea un archivo `.env.production`:
     ```bash
-    npm run dev
+    nano .env.production
     ```
-5.  Para **Producción** (Despliegue en Apache):
-    *   Ejecuta `npm run build`. Esto creará una carpeta `dist`.
-    *   Copia el contenido de la carpeta `dist` al directorio raíz de tu servidor web (ej: `htdocs/drivetime`).
-    *   Asegúrate de copiar también el archivo `.htaccess` del frontend para que el enrutamiento funcione correctamente.
+    Añade:
+    ```env
+    VITE_API_URL=http://tu_dominio_o_ip/api
+    ```
+
+3.  Compila la aplicación:
+    ```bash
+    npm run build
+    ```
+
+4.  Despliega los archivos compilados:
+    Copia el contenido de la carpeta `dist` a la raíz de tu servidor web:
+    ```bash
+    sudo cp -r dist/* /var/www/html/
+    ```
+    *(Nota: Esto sobrescribirá el `index.html` por defecto de Apache)*
 
 ---
 
-## 📂 Estructura del Proyecto Final
+## ✅ Verificación Final
+
+1.  Abre tu navegador y ve a `http://tu_dominio_o_ip/`.
+    *   Deberías ver la aplicación de DriveTime cargando.
+2.  Intenta hacer una reserva.
+    *   Si todo está bien, la aplicación se comunicará con `http://tu_dominio_o_ip/api/bookings.php` y guardará la reserva en MySQL.
+
+---
+
+## 📂 Estructura en el Servidor (/var/www/html)
 
 ```text
-/var/www/html/ (o htdocs)
-├── drivetime-backend/       # API PHP
-│   ├── api/
-│   │   ├── instructors.php
-│   │   ├── bookings.php
-│   │   └── availability.php
-│   └── config.php
-│
-└── drivetime/               # Frontend React Compilado (carpeta dist)
-    ├── index.html
-    ├── assets/
-    └── .htaccess
+/var/www/html/
+├── api/                 # API PHP
+│   ├── instructors.php
+│   ├── bookings.php
+│   └── ...
+├── assets/              # Archivos JS/CSS del Frontend compilado
+├── config.php           # Configuración de BD
+├── index.html           # Punto de entrada de React
+└── .htaccess            # Reglas de enrutamiento
 ```
-
----
-
-## ✨ Características
-
-*   **Arquitectura Headless**: El frontend React consume una API REST en PHP.
-*   **Base de Datos Relacional**: MySQL gestiona la integridad de los datos.
-*   **Seguridad**: Uso de sentencias preparadas (PDO) para evitar Inyecciones SQL.
-*   **UX Moderna**: Interfaz reactiva y rápida gracias a React y Tailwind.

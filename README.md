@@ -1,84 +1,91 @@
 # DriveTime - SaaS de Reservas de Clases de Conducir
 
-Este proyecto es una solución moderna para la gestión de reservas de clases de conducir, diseñada para ofrecer una experiencia de usuario (UX) fluida y profesional.
+Este proyecto es una solución completa para la gestión de reservas, construida con una arquitectura moderna **Frontend-Backend**.
 
-Está compuesto por un **Frontend en React + TypeScript + Tailwind CSS** que simula un proceso de reserva paso a paso, y un esquema de base de datos **PostgreSQL** listo para integrarse con **PostgREST**.
+*   **Frontend**: React (Vite) + TypeScript + Tailwind CSS.
+*   **Backend**: PHP + MySQL + Apache.
 
 ---
 
 ## 📋 Requisitos Previos
 
-Para ejecutar este proyecto necesitarás tener instalado:
+Para ejecutar este proyecto necesitarás:
 
-*   **Node.js** (v18 o superior): Para ejecutar el frontend.
-*   **PostgreSQL** (v13 o superior): Base de datos relacional.
-*   **PostgREST** (Opcional, para producción): Para exponer tu base de datos como una API REST automáticamente.
+1.  **Node.js** (v18+): Para compilar el frontend.
+2.  **Servidor Web (Apache/Nginx)**: Recomendado XAMPP, MAMP, o un servidor LAMP estándar.
+3.  **PHP** (v7.4+): Con extensión `pdo_mysql` habilitada.
+4.  **MySQL/MariaDB**: Base de datos.
 
 ---
 
-## 🚀 Instalación y Ejecución
+## 🚀 Instalación y Despliegue
 
-### 1. Frontend (Interfaz de Usuario)
+### 1. Configuración de la Base de Datos (MySQL)
 
-El frontend está construido con Vite, lo que lo hace muy rápido y ligero.
+1.  Abre tu herramienta de gestión de base de datos (phpMyAdmin, MySQL Workbench, DBeaver).
+2.  Crea una base de datos llamada `drivetime`.
+3.  Ejecuta el script SQL ubicado en `database/schema_mysql.sql`.
+    *   Esto creará las tablas `instructors` y `bookings` e insertará datos de ejemplo.
+
+### 2. Configuración del Backend (PHP)
+
+1.  Copia la carpeta `drivetime-backend` a tu directorio raíz del servidor web (ej: `htdocs` en XAMPP o `/var/www/html` en Linux).
+2.  Edita el archivo `drivetime-backend/config.php` y actualiza las credenciales de la base de datos:
+    ```php
+    $host = 'localhost';
+    $db_name = 'drivetime';
+    $username = 'root'; // Tu usuario
+    $password = '';     // Tu contraseña
+    ```
+3.  Verifica que la API funciona accediendo a: `http://localhost/drivetime-backend/api/instructors.php`. Deberías ver un JSON con los instructores.
+
+### 3. Configuración del Frontend (React)
 
 1.  Navega al directorio del frontend:
     ```bash
     cd drivetime-frontend
     ```
-
 2.  Instala las dependencias:
     ```bash
     npm install
     ```
-
-3.  Inicia el servidor de desarrollo:
+3.  Crea un archivo `.env` en la raíz de `drivetime-frontend` para apuntar a tu API PHP local:
+    ```env
+    VITE_API_URL=http://localhost/drivetime-backend/api
+    ```
+4.  Para desarrollo local (con Hot Reload):
     ```bash
     npm run dev
     ```
-
-4.  Abre tu navegador en `http://localhost:5173` para ver la aplicación funcionando con datos de prueba (Mocks).
-
-### 2. Base de Datos (Backend)
-
-Hemos incluido un archivo SQL con el esquema completo de la base de datos, optimizado para trabajar con PostgREST.
-
-1.  Asegúrate de tener un servidor PostgreSQL corriendo.
-2.  Ejecuta el script `database/schema.sql` en tu base de datos. Puedes hacerlo desde la línea de comandos:
-
-    ```bash
-    psql -U tu_usuario -d tu_base_de_datos -f database/schema.sql
-    ```
-
-    **Este script creará:**
-    *   Tabla `instructors` (Profesores)
-    *   Tabla `bookings` (Reservas)
-    *   Extensiones necesarias (UUID)
-    *   Políticas de seguridad (RLS - Row Level Security)
-    *   Datos de ejemplo iniciales
-
-### 3. Integración con PostgREST (Futuro)
-
-Actualmente, el frontend utiliza datos simulados (`src/data/mock-data.ts`) para demostración. Para conectar con tu base de datos real a través de PostgREST:
-
-1.  Instala y ejecuta PostgREST apuntando a tu base de datos.
-2.  En el frontend, reemplaza las llamadas a `mock-data.ts` por llamadas `fetch` a tu API de PostgREST (ej: `http://localhost:3000/instructors`).
+5.  Para **Producción** (Despliegue en Apache):
+    *   Ejecuta `npm run build`. Esto creará una carpeta `dist`.
+    *   Copia el contenido de la carpeta `dist` al directorio raíz de tu servidor web (ej: `htdocs/drivetime`).
+    *   Asegúrate de copiar también el archivo `.htaccess` del frontend para que el enrutamiento funcione correctamente.
 
 ---
 
-## 📂 Estructura del Proyecto
+## 📂 Estructura del Proyecto Final
 
-*   `/drivetime-frontend`: Código fuente de la aplicación React.
-    *   `src/components/booking`: Componentes del flujo de reserva (Calendario, Horarios, Profesores).
-    *   `src/layouts`: Diseño principal de la página.
-    *   `src/data`: Datos de prueba.
-*   `/database`: Scripts SQL para la creación de la base de datos.
+```text
+/var/www/html/ (o htdocs)
+├── drivetime-backend/       # API PHP
+│   ├── api/
+│   │   ├── instructors.php
+│   │   ├── bookings.php
+│   │   └── availability.php
+│   └── config.php
+│
+└── drivetime/               # Frontend React Compilado (carpeta dist)
+    ├── index.html
+    ├── assets/
+    └── .htaccess
+```
 
 ---
 
 ## ✨ Características
 
-*   **Diseño Responsivo**: Funciona en móviles y escritorio.
-*   **Flujo de 4 Pasos**: Selección de Fecha -> Hora -> Profesor -> Confirmación.
-*   **Validaciones**: Evita seleccionar horarios pasados o profesores no disponibles.
-*   **UI Moderna**: Uso de Tailwind CSS para una apariencia limpia y profesional.
+*   **Arquitectura Headless**: El frontend React consume una API REST en PHP.
+*   **Base de Datos Relacional**: MySQL gestiona la integridad de los datos.
+*   **Seguridad**: Uso de sentencias preparadas (PDO) para evitar Inyecciones SQL.
+*   **UX Moderna**: Interfaz reactiva y rápida gracias a React y Tailwind.

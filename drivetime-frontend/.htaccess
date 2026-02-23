@@ -1,0 +1,13 @@
+# Enable Rewrite Engine
+RewriteEngine On
+
+# Frontend: Redirect all non-API requests to index.html (SPA)
+# If the request is NOT for the API folder
+RewriteCond %{REQUEST_URI} !^/drivetime-backend/api/
+
+# And the file/directory does not exist
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Rewrite everything else to index.html (React App)
+RewriteRule ^ index.html [L]

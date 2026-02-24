@@ -3,9 +3,19 @@
 header('Content-Type: application/json; charset=utf-8');
 
 // Allow CORS
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+$origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+$allowed_origins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost']; // Add production domain here
+
+if (in_array($origin, $allowed_origins)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+} else {
+    // Fallback or strict deny? For dev, wildcard is sometimes easier but less secure.
+    // header('Access-Control-Allow-Origin: *');
+}
+
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -31,3 +41,6 @@ try {
     echo json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]);
     exit;
 }
+
+// JWT Secret Key
+$jwt_secret_key = 'tu_secreto_super_seguro_jwt'; // Change this in production!

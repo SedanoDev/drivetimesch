@@ -1,91 +1,66 @@
-# DriveTime - SaaS de Reservas de Clases de Conducir
+# DriveTime - SaaS de Reservas de Clases de Conducir (Multi-Tenant)
 
-Este proyecto es una solución completa para la gestión de reservas, construida con una arquitectura moderna **Frontend-Backend**.
+Este proyecto es una solución completa para la gestión de reservas de múltiples autoescuelas (SaaS), construida con una arquitectura moderna **Frontend-Backend**.
 
 *   **Frontend**: React (Vite) + TypeScript + Tailwind CSS.
 *   **Backend**: PHP + MySQL + Apache.
 
 ---
 
-## 📋 Requisitos Previos
+## 📋 Características Principales
 
-Para ejecutar este proyecto necesitarás:
-
-1.  **Node.js** (v18+): Para compilar el frontend.
-2.  **Servidor Web (Apache/Nginx)**: Recomendado XAMPP, MAMP, o un servidor LAMP estándar.
-3.  **PHP** (v7.4+): Con extensión `pdo_mysql` habilitada.
-4.  **MySQL/MariaDB**: Base de datos.
-
----
-
-## 🚀 Instalación y Despliegue
-
-### 1. Configuración de la Base de Datos (MySQL)
-
-1.  Abre tu herramienta de gestión de base de datos (phpMyAdmin, MySQL Workbench, DBeaver).
-2.  Crea una base de datos llamada `drivetime`.
-3.  Ejecuta el script SQL ubicado en `database/schema_mysql.sql`.
-    *   Esto creará las tablas `instructors` y `bookings` e insertará datos de ejemplo.
-
-### 2. Configuración del Backend (PHP)
-
-1.  Copia la carpeta `drivetime-backend` a tu directorio raíz del servidor web (ej: `htdocs` en XAMPP o `/var/www/html` en Linux).
-2.  Edita el archivo `drivetime-backend/config.php` y actualiza las credenciales de la base de datos:
-    ```php
-    $host = 'localhost';
-    $db_name = 'drivetime';
-    $username = 'root'; // Tu usuario
-    $password = '';     // Tu contraseña
-    ```
-3.  Verifica que la API funciona accediendo a: `http://localhost/drivetime-backend/api/instructors.php`. Deberías ver un JSON con los instructores.
-
-### 3. Configuración del Frontend (React)
-
-1.  Navega al directorio del frontend:
-    ```bash
-    cd drivetime-frontend
-    ```
-2.  Instala las dependencias:
-    ```bash
-    npm install
-    ```
-3.  Crea un archivo `.env` en la raíz de `drivetime-frontend` para apuntar a tu API PHP local:
-    ```env
-    VITE_API_URL=http://localhost/drivetime-backend/api
-    ```
-4.  Para desarrollo local (con Hot Reload):
-    ```bash
-    npm run dev
-    ```
-5.  Para **Producción** (Despliegue en Apache):
-    *   Ejecuta `npm run build`. Esto creará una carpeta `dist`.
-    *   Copia el contenido de la carpeta `dist` al directorio raíz de tu servidor web (ej: `htdocs/drivetime`).
-    *   Asegúrate de copiar también el archivo `.htaccess` del frontend para que el enrutamiento funcione correctamente.
+*   **Multi-Tenant**: Soporta múltiples autoescuelas en una sola instalación. Cada usuario pertenece a una organización (Tenant).
+*   **Roles y Permisos**:
+    *   **SuperAdmin**: Gestiona todas las autoescuelas.
+    *   **Admin**: Gestiona su propia autoescuela.
+    *   **Instructor**: Gestiona sus clases y horarios.
+    *   **Alumno**: Reserva clases y ve su historial.
+*   **Autenticación Segura**: Login mediante JWT (JSON Web Tokens).
 
 ---
 
-## 📂 Estructura del Proyecto Final
+## 🚀 Instalación y Despliegue (Ubuntu/Linux)
 
-```text
-/var/www/html/ (o htdocs)
-├── drivetime-backend/       # API PHP
-│   ├── api/
-│   │   ├── instructors.php
-│   │   ├── bookings.php
-│   │   └── availability.php
-│   └── config.php
-│
-└── drivetime/               # Frontend React Compilado (carpeta dist)
-    ├── index.html
-    ├── assets/
-    └── .htaccess
+### 1. Requisitos Previos (LAMP Stack)
+
+```bash
+sudo apt update
+sudo apt install apache2 mysql-server php php-mysql php-pdo nodejs npm -y
 ```
 
+### 2. Configuración de la Base de Datos (MySQL)
+
+1.  Crea la base de datos y usuario:
+    ```sql
+    CREATE DATABASE drivetime;
+    CREATE USER 'drivetime_user'@'localhost' IDENTIFIED BY 'tu_password_segura';
+    GRANT ALL PRIVILEGES ON drivetime.* TO 'drivetime_user'@'localhost';
+    FLUSH PRIVILEGES;
+    ```
+
+2.  Importa el esquema actualizado (con soporte Multi-Tenant):
+    ```bash
+    mysql -u drivetime_user -p drivetime < database/schema_mysql.sql
+    ```
+
+### 3. Configuración del Backend (PHP)
+
+1.  Copia la carpeta `drivetime-backend` a `/var/www/html/api`.
+2.  Edita `config.php` con las credenciales de la base de datos.
+3.  Asegúrate de que Apache tenga habilitado `mod_rewrite` y permita `.htaccess`.
+
+### 4. Compilar y Desplegar Frontend (React)
+
+1.  En `drivetime-frontend`, crea `.env.production`:
+    ```env
+    VITE_API_URL=http://tu_dominio/api
+    ```
+2.  Compila: `npm run build`.
+3.  Copia el contenido de `dist/` a `/var/www/html/`.
+
 ---
 
-## ✨ Características
+## 🔒 Seguridad
 
-*   **Arquitectura Headless**: El frontend React consume una API REST en PHP.
-*   **Base de Datos Relacional**: MySQL gestiona la integridad de los datos.
-*   **Seguridad**: Uso de sentencias preparadas (PDO) para evitar Inyecciones SQL.
-*   **UX Moderna**: Interfaz reactiva y rápida gracias a React y Tailwind.
+*   **JWT**: Todas las peticiones a la API requieren un token válido en el header `Authorization: Bearer <token>`.
+*   **Aislamiento de Datos**: El backend filtra automáticamente todas las consultas por `tenant_id` extraído del token JWT, asegurando que una autoescuela nunca vea datos de otra.

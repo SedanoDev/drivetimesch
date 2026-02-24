@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from './hooks/useAuth.tsx';
+import { LoginPage } from './components/auth/LoginPage';
 import { MainLayout } from './layouts/main-layout';
 import { Stepper } from './components/booking/stepper';
 import { Calendar } from './components/booking/calendar';
@@ -11,6 +13,12 @@ import type { Instructor, TimeSlot } from './types';
 import { INSTRUCTORS as MOCK_INSTRUCTORS, TIME_SLOTS as MOCK_SLOTS } from './data/mock-data';
 
 function App() {
+  const { user, token } = useAuth();
+
+  if (!user || !token) {
+    return <LoginPage />;
+  }
+
   // Step 1..3 are on the main page. Step 4 is Confirmation View.
   const [view, setView] = useState<'selection' | 'confirmation'>('selection');
 
@@ -96,7 +104,6 @@ function App() {
       // Attempt API call
       const success = await createBooking({
           instructor_id: selectedInstructorId!,
-          student_name: "Usuario Demo", // In a real app, you'd have a form input for this
           booking_date: selectedDate!.toISOString().split('T')[0],
           start_time: selectedTime!,
       });

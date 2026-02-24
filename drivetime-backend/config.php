@@ -31,3 +31,6 @@ try {
     echo json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]);
     exit;
 }
+
+// JWT Secret Key
+$jwt_secret_key = 'tu_secreto_super_seguro_jwt'; // Change this in production!

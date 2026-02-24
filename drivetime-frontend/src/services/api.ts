@@ -1,11 +1,19 @@
-import type { Instructor, TimeSlot } from '../types';
+import type { Instructor } from '../types';
 
 // Use environment variable or fallback to localhost
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
 
+// Helper to get token
+const getAuthHeader = (): Record<string, string> => {
+  const token = localStorage.getItem('token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
+
 export async function fetchInstructors(): Promise<Instructor[]> {
     try {
-        const response = await fetch(`${API_URL}/instructors.php`);
+        const response = await fetch(`${API_URL}/instructors.php`, {
+            headers: getAuthHeader()
+        });
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -16,23 +24,8 @@ export async function fetchInstructors(): Promise<Instructor[]> {
     }
 }
 
-export async function fetchAvailability(date: string, instructorId: string): Promise<TimeSlot[]> {
-    try {
-         // In a real app, you'd pass date & instructorId as query params
-        const response = await fetch(`${API_URL}/availability.php?date=${date}&instructorId=${instructorId}`);
-        if (!response.ok) {
-             throw new Error('Network response was not ok');
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Failed to fetch availability:", error);
-        return [];
-    }
-}
-
 export async function createBooking(booking: {
     instructor_id: string;
-    student_name: string;
     booking_date: string;
     start_time: string;
 }): Promise<boolean> {
@@ -41,6 +34,7 @@ export async function createBooking(booking: {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...getAuthHeader()
             },
             body: JSON.stringify(booking),
         });

@@ -90,18 +90,18 @@ SET @tenant_id = UUID();
 INSERT INTO tenants (id, name, slug) VALUES (@tenant_id, 'Autoescuela Demo', 'demo');
 
 -- 2. Create Users (Password: '123456' hashed with PASSWORD_DEFAULT)
--- Use a known hash for '123456': $2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
+-- Hash generated via PHP: password_hash('123456', PASSWORD_DEFAULT)
 INSERT INTO users (id, tenant_id, email, password_hash, full_name, role) VALUES
-(UUID(), @tenant_id, 'admin@demo.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin Demo', 'admin'),
-(UUID(), @tenant_id, 'alumno@demo.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Alumno Demo', 'student');
+(UUID(), @tenant_id, 'admin@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Admin Demo', 'admin'),
+(UUID(), @tenant_id, 'alumno@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Alumno Demo', 'student');
 
 -- 3. Create Instructor Users & Profiles
 SET @inst1_id = UUID();
 SET @inst2_id = UUID();
 
 INSERT INTO users (id, tenant_id, email, password_hash, full_name, role) VALUES
-(@inst1_id, @tenant_id, 'carlos@demo.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Carlos Martinez', 'instructor'),
-(@inst2_id, @tenant_id, 'ana@demo.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Ana Lopez', 'instructor');
+(@inst1_id, @tenant_id, 'carlos@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Carlos Martinez', 'instructor'),
+(@inst2_id, @tenant_id, 'ana@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Ana Lopez', 'instructor');
 
 INSERT INTO instructors (id, tenant_id, user_id, name, bio, vehicle_type, rating, reviews_count, image_url) VALUES
 (UUID(), @tenant_id, @inst1_id, 'Carlos Martinez', 'Conducción urbana - Manual', 'Manual', 4.8, 128, 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos'),

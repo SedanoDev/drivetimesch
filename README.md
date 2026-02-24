@@ -7,6 +7,20 @@ Este proyecto es una solución completa para la gestión de reservas de múltipl
 
 ---
 
+## 🔑 Usuarios de Prueba (Demo)
+
+Hemos creado usuarios con diferentes roles para que puedas probar todas las funcionalidades.
+
+> **Contraseña para TODOS los usuarios:** `123456`
+
+| Rol | Email | Permisos |
+| :--- | :--- | :--- |
+| **Administrador** | `admin@demo.com` | Acceso total al Panel de Administración (Dashboard, Reservas, Profesores). |
+| **Instructor** | `carlos@demo.com` | Gestión de sus clases (Vista básica por ahora). |
+| **Alumno** | `alumno@demo.com` | Realizar nuevas reservas y cancelar las propias. |
+
+---
+
 ## 📋 Características Principales
 
 *   **Multi-Tenant**: Soporta múltiples autoescuelas en una sola instalación. Cada usuario pertenece a una organización (Tenant).

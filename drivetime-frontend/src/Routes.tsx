@@ -11,13 +11,29 @@ import { StudentBookingPage } from './pages/student/StudentBookingPage';
 import { StudentMyClasses } from './pages/student/StudentMyClasses';
 import { InstructorDashboard } from './pages/instructor/InstructorDashboard';
 import { InstructorAvailability } from './pages/instructor/InstructorAvailability';
+import { LandingPage } from './pages/public/LandingPage';
+import { SchoolRegister } from './pages/public/SchoolRegister';
+import { FindSchool } from './pages/public/FindSchool';
 
 export function AppRoutes() {
   const { user } = useAuth();
 
   return (
     <Routes>
-      <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" replace />} />
+      {/* Public Routes */}
+      <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard-redirect" replace />} />
+      <Route path="/register-school" element={<SchoolRegister />} />
+      <Route path="/find-school" element={<FindSchool />} />
+      <Route path="/login/:slug?" element={!user ? <LoginPage /> : <Navigate to="/dashboard-redirect" replace />} />
+
+      {/* Redirect Helper */}
+      <Route path="/dashboard-redirect" element={
+          !user ? <Navigate to="/login" replace /> :
+          user.role === 'student' ? <Navigate to="/student/dashboard" replace /> :
+          user.role === 'instructor' ? <Navigate to="/instructor/dashboard" replace /> :
+          (user.role === 'admin' || user.role === 'superadmin') ? <Navigate to="/admin/dashboard" replace /> :
+          <Navigate to="/login" replace />
+      } />
 
       {/* Student Routes */}
       <Route path="/student" element={user?.role === 'student' ? <StudentLayout /> : <Navigate to="/login" />}>
@@ -44,15 +60,6 @@ export function AppRoutes() {
          <Route path="instructors" element={<InstructorsManager />} />
          <Route path="config" element={<div>Configuración</div>} />
       </Route>
-
-      {/* Root Redirect based on Role */}
-      <Route path="/" element={
-          !user ? <Navigate to="/login" replace /> :
-          user.role === 'student' ? <Navigate to="/student/dashboard" replace /> :
-          user.role === 'instructor' ? <Navigate to="/instructor/dashboard" replace /> :
-          (user.role === 'admin' || user.role === 'superadmin') ? <Navigate to="/admin/dashboard" replace /> :
-          <Navigate to="/login" replace />
-      } />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

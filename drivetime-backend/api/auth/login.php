@@ -24,11 +24,31 @@ if (!isset($jwt_secret_key)) {
 }
 
 try {
-    // Check user credentials
-    // Note: In production, we should also check if tenant is active
-    $stmt = $pdo->prepare("SELECT id, tenant_id, password_hash, role, full_name FROM users WHERE email = ? LIMIT 1");
-    $stmt->execute([$input['email']]);
-    $user = $stmt->fetch();
+    $email = $input['email'];
+    $slug = $input['slug'] ?? null;
+
+    $user = null;
+
+    if ($slug) {
+        // If slug is provided, we must find the user within that specific tenant
+        $stmt = $pdo->prepare("
+            SELECT u.id, u.tenant_id, u.password_hash, u.role, u.full_name
+            FROM users u
+            JOIN tenants t ON u.tenant_id = t.id
+            WHERE u.email = ? AND t.slug = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$email, $slug]);
+        $user = $stmt->fetch();
+    } else {
+        // Fallback: If no slug (generic login), find the user.
+        // Note: If email exists in multiple tenants, this might be ambiguous.
+        // For a real SaaS, we'd probably require tenant context or have a central user table.
+        // Here we pick the first match.
+        $stmt = $pdo->prepare("SELECT id, tenant_id, password_hash, role, full_name FROM users WHERE email = ? LIMIT 1");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+    }
 
     if ($user && password_verify($input['password'], $user['password_hash'])) {
 
@@ -48,7 +68,7 @@ try {
             'token' => $token,
             'user' => [
                 'id' => $user['id'],
-                'email' => $input['email'],
+                'email' => $email,
                 'name' => $user['full_name'],
                 'role' => $user['role'],
                 'tenant_id' => $user['tenant_id']
@@ -57,7 +77,7 @@ try {
 
     } else {
         http_response_code(401);
-        echo json_encode(['error' => 'Invalid credentials']);
+        echo json_encode(['error' => 'Invalid credentials or incorrect school']);
     }
 
 } catch (\PDOException $e) {

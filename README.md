@@ -60,7 +60,11 @@ sudo apt install apache2 mysql-server php php-mysql php-pdo nodejs npm -y
 ### 3. Configuración del Backend (PHP)
 
 1.  Copia la carpeta `drivetime-backend` a `/var/www/html/api`.
-2.  Edita `config.php` con las credenciales de la base de datos.
+2.  Renombra `config.example.php` a `config.php` y edítalo con las credenciales de tu base de datos y una clave secreta para JWT.
+    ```bash
+    mv api/config.example.php api/config.php
+    nano api/config.php
+    ```
 3.  Asegúrate de que Apache tenga habilitado `mod_rewrite` y permita `.htaccess`.
 
 ### 4. Compilar y Desplegar Frontend (React)

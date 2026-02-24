@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth.tsx';
 import { LoginPage } from './components/auth/LoginPage';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { MainLayout } from './layouts/main-layout';
 import { Stepper } from './components/booking/stepper';
 import { Calendar } from './components/booking/calendar';
@@ -17,6 +18,10 @@ function App() {
 
   if (!user || !token) {
     return <LoginPage />;
+  }
+
+  if (user.role === 'admin' || user.role === 'superadmin') {
+      return <AdminDashboard />;
   }
 
   // Step 1..3 are on the main page. Step 4 is Confirmation View.
@@ -50,18 +55,31 @@ function App() {
     loadData();
   }, []);
 
-  // Fetch availability when date changes (mock logic for now)
-  useEffect(() => {
-      if (selectedDate) {
-          // In real app: fetchAvailability(format(selectedDate, 'yyyy-MM-dd'), selectedInstructorId);
-          // For now, just randomization or static
-      }
-  }, [selectedDate]);
+  // Fetch availability when date or instructor changes
+  // Logic: Wait for Date AND Instructor to be selected before fetching?
+  // Or fetch availability for ALL instructors for a date?
+  // Current UI: Select Date -> Select Time -> Select Instructor
+  // Wait, the UI flow is Date -> Time -> Instructor.
+  // This means "Time Slots" must be general (any instructor available) OR we need to rethink flow.
+  // The provided design image shows: Date -> Time -> Instructor.
+  // This implies we pick a time slot (e.g. 09:00) and THEN see which instructors are free at 09:00.
+  // To do this, we need an endpoint /availability?date=X that returns slots that have AT LEAST ONE instructor free.
+  // OR, we simplify and assume we pick Date -> Instructor -> Time?
+  // Let's stick to the image flow:
+  // 1. Pick Date.
+  // 2. See Times. (Calculated by: Are there ANY instructors free at 9:00 on Date X?)
+  // 3. Pick Time.
+  // 4. See Instructors available at that Time.
+
+  // However, the backend `availability.php` I wrote expects `instructorId`.
+  // To match the UI exactly, I should probably fetch ALL instructors, check their slots, and aggregate.
+  // For MVP/Demo simplicity, let's keep the mock slots or implement a "check general availability" endpoint later.
+  // For now, let's just use the mock slots for the "General Time Selection" step
+  // and validate/filter instructors in the next step.
 
   if (loadingData) {
       // Optional: loading spinner, or just render with initial mocks
   }
-
 
   const selectedInstructor = instructors.find(i => i.id === selectedInstructorId) || null;
 

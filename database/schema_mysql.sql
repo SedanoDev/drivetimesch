@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS tenants (
     id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) UNIQUE NOT NULL, -- Para urls: autoescuela-madrid.drivetime.com
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Users table (Usuarios de la plataforma)
@@ -18,13 +19,12 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(255) NOT NULL,
     role ENUM('superadmin', 'admin', 'instructor', 'student') NOT NULL DEFAULT 'student',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY (tenant_id, email), -- Email único por tenant
     FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 );
 
 -- Instructors table (Profesores)
--- Linked to a user account for login? Maybe. Or kept separate for now.
--- Let's keep separate for simplicity in this migration, but link via tenant_id.
 CREATE TABLE IF NOT EXISTS instructors (
     id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
     tenant_id VARCHAR(36) NOT NULL,
@@ -37,8 +37,26 @@ CREATE TABLE IF NOT EXISTS instructors (
     image_url TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Availabilities table (Horarios disponibles de los profesores)
+-- Defines general availability per day of week (0=Sunday, 1=Monday, ..., 6=Saturday)
+CREATE TABLE IF NOT EXISTS availabilities (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    tenant_id VARCHAR(36) NOT NULL,
+    instructor_id VARCHAR(36) NOT NULL,
+    day_of_week TINYINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+    start_time TIME NOT NULL, -- e.g., '09:00:00'
+    end_time TIME NOT NULL,   -- e.g., '18:00:00'
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (instructor_id) REFERENCES instructors(id) ON DELETE CASCADE,
+    UNIQUE KEY idx_avail_instr_day (instructor_id, day_of_week, start_time) -- Prevent overlapping slots for same instructor/day
 );
 
 -- Bookings table (Reservas)
@@ -53,6 +71,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     duration_minutes INT DEFAULT 60,
     status ENUM('confirmed', 'cancelled', 'pending') DEFAULT 'confirmed',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
     FOREIGN KEY (instructor_id) REFERENCES instructors(id) ON DELETE CASCADE,
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
@@ -60,7 +79,9 @@ CREATE TABLE IF NOT EXISTS bookings (
 
 -- Indexes for performance
 CREATE INDEX idx_bookings_instructor_date ON bookings(instructor_id, booking_date);
+CREATE INDEX idx_bookings_tenant_status ON bookings(tenant_id, status);
 CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_bookings_date ON bookings(booking_date);
 
 -- SEED DATA (Datos de prueba)
 
@@ -85,3 +106,18 @@ INSERT INTO users (id, tenant_id, email, password_hash, full_name, role) VALUES
 INSERT INTO instructors (id, tenant_id, user_id, name, bio, vehicle_type, rating, reviews_count, image_url) VALUES
 (UUID(), @tenant_id, @inst1_id, 'Carlos Martinez', 'Conducción urbana - Manual', 'Manual', 4.8, 128, 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos'),
 (UUID(), @tenant_id, @inst2_id, 'Ana Lopez', 'Autopista - Automatico', 'Automatic', 4.9, 94, 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ana');
+
+-- 4. Set Availability for Instructors (Mon-Fri, 9am-6pm)
+-- Carlos (Manual) works Mon, Wed, Fri
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
+SELECT UUID(), @tenant_id, id, 1, '09:00:00', '18:00:00' FROM instructors WHERE name = 'Carlos Martinez'; -- Mon
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
+SELECT UUID(), @tenant_id, id, 3, '09:00:00', '18:00:00' FROM instructors WHERE name = 'Carlos Martinez'; -- Wed
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
+SELECT UUID(), @tenant_id, id, 5, '09:00:00', '14:00:00' FROM instructors WHERE name = 'Carlos Martinez'; -- Fri (Half day)
+
+-- Ana (Automatic) works Tue, Thu
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
+SELECT UUID(), @tenant_id, id, 2, '10:00:00', '19:00:00' FROM instructors WHERE name = 'Ana Lopez'; -- Tue
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
+SELECT UUID(), @tenant_id, id, 4, '10:00:00', '19:00:00' FROM instructors WHERE name = 'Ana Lopez'; -- Thu

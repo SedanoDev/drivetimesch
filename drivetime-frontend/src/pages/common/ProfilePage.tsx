@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-back
 export function ProfilePage() {
   const { user, token } = useAuth();
   const [profile, setProfile] = useState({
-      full_name: '',
+      full_name: user?.name || '',
       email: '',
       role: '',
       password: ''

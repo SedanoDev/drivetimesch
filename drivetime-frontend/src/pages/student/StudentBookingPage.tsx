@@ -135,23 +135,12 @@ export function StudentBookingPage() {
             {/* Step 1: Select Instructor */}
             <div>
                 <h3 className="text-lg font-bold text-slate-800 mb-4 px-4 lg:px-0">1. Selecciona Instructor</h3>
-                <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                    <div className="space-y-3">
-                        {instructors.map((inst) => (
-                             <div
-                                key={inst.id}
-                                onClick={() => handleInstructorSelect(inst.id)}
-                                className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${selectedInstructorId === inst.id ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:border-blue-200'}`}
-                             >
-                                <img src={inst.image_url} alt={inst.name} className="w-12 h-12 rounded-full object-cover" />
-                                <div>
-                                    <div className="font-bold text-slate-800">{inst.name}</div>
-                                    <div className="text-xs text-slate-500">{inst.vehicle_type}</div>
-                                </div>
-                             </div>
-                        ))}
-                    </div>
-                </div>
+                <InstructorList
+                    instructors={instructors}
+                    selectedInstructorId={selectedInstructorId}
+                    onSelectInstructor={handleInstructorSelect}
+                    selectedTime={selectedTime || ''}
+                />
             </div>
 
             {/* Step 2: Select Date (Visible only if Instructor selected) */}

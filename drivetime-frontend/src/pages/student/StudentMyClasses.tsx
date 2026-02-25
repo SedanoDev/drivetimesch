@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Calendar, User, Clock, CheckCircle, XCircle, Star, MessageSquare } from 'lucide-react';
+import { Calendar, User, Clock, CheckCircle, XCircle, Star } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';

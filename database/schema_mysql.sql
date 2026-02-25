@@ -201,3 +201,19 @@ SELECT UUID(), @tenant_id, id, 4, '10:00:00', '19:00:00' FROM instructors WHERE 
 INSERT INTO class_packs (id, tenant_id, name, classes_count, price, discount_percentage) VALUES
 (UUID(), @tenant_id, 'Pack 5 Clases', 5, 165.00, 5.00),
 (UUID(), @tenant_id, 'Pack 10 Clases', 10, 315.00, 10.00);
+
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    tenant_id VARCHAR(36) NOT NULL,
+    booking_id VARCHAR(36) NOT NULL UNIQUE, -- One review per booking
+    student_id VARCHAR(36) NOT NULL,
+    instructor_id VARCHAR(36) NOT NULL,
+    rating TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (instructor_id) REFERENCES instructors(id) ON DELETE CASCADE
+);

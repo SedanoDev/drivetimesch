@@ -32,7 +32,8 @@ if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
 // --- GET: List Bookings (with filters) ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
-        $sql = "SELECT b.id, b.booking_date, b.start_time, b.status, b.student_name, i.name as instructor_name, u.email as student_email
+        $sql = "SELECT b.id, b.booking_date, b.start_time, b.status, b.notes, b.student_name, i.name as instructor_name, u.email as student_email,
+                (SELECT COUNT(*) FROM reviews r WHERE r.booking_id = b.id) as has_review
                 FROM bookings b
                 LEFT JOIN instructors i ON b.instructor_id = i.id
                 LEFT JOIN users u ON b.student_id = u.id
@@ -52,6 +53,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $params[] = $_GET['instructor_id'];
         }
 
+        // Instructor Role Filter (My Bookings)
+        if ($user['role'] === 'instructor') {
+             // Find instructor ID for this user
+             $instIdStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
+             $instIdStmt->execute([$user['sub']]);
+             $instructorId = $instIdStmt->fetchColumn();
+             if ($instructorId) {
+                 $sql .= " AND b.instructor_id = ?";
+                 $params[] = $instructorId;
+             }
+        }
+
         // Filter by Role (Students only see their own)
         if ($user['role'] === 'student') {
             $sql .= " AND b.student_id = ?";
@@ -63,6 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         $bookings = $stmt->fetchAll();
+
+        // Boolean conversion
+        foreach ($bookings as &$b) {
+            $b['has_review'] = (bool)$b['has_review'];
+        }
 
         echo json_encode($bookings);
 
@@ -142,29 +160,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// --- PUT: Update Booking Status (Cancel/Confirm) ---
+// --- PUT: Update Booking Status/Notes ---
 if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $input = json_decode(file_get_contents('php://input'), true);
 
-    if (!isset($input['id'], $input['status'])) {
+    if (!isset($input['id'])) {
         http_response_code(400);
-        echo json_encode(['error' => 'Missing ID or Status']);
-        exit;
-    }
-
-    // Only allow specific statuses
-    $allowed_statuses = ['confirmed', 'cancelled', 'pending'];
-    if (!in_array($input['status'], $allowed_statuses)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid status']);
+        echo json_encode(['error' => 'Missing ID']);
         exit;
     }
 
     try {
-        // Verify ownership/permissions
-        // Students can only CANCEL their own bookings (cannot confirm)
-        // Instructors/Admins can do anything
-
         $fetchSql = "SELECT * FROM bookings WHERE id = ? AND tenant_id = ?";
         $fetchStmt = $pdo->prepare($fetchSql);
         $fetchStmt->execute([$input['id'], $user['tenant_id']]);
@@ -176,30 +182,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             exit;
         }
 
-        if ($user['role'] === 'student') {
-            if ($booking['student_id'] !== $user['sub']) {
-                http_response_code(403);
-                echo json_encode(['error' => 'Unauthorized']);
+        // --- Status Update ---
+        if (isset($input['status'])) {
+            $allowed_statuses = ['confirmed', 'cancelled', 'pending', 'completed'];
+            if (!in_array($input['status'], $allowed_statuses)) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid status']);
                 exit;
             }
-            if ($input['status'] !== 'cancelled') {
-                 http_response_code(403);
-                 echo json_encode(['error' => 'Students can only cancel bookings']);
-                 exit;
+
+            // Permissions
+            if ($user['role'] === 'student') {
+                if ($booking['student_id'] !== $user['sub']) { http_response_code(403); exit; }
+                if ($input['status'] !== 'cancelled') {
+                     http_response_code(403);
+                     echo json_encode(['error' => 'Students can only cancel bookings']);
+                     exit;
+                }
             }
+
+            $stmt = $pdo->prepare("UPDATE bookings SET status = ? WHERE id = ?");
+            $stmt->execute([$input['status'], $input['id']]);
         }
 
-        $updateStmt = $pdo->prepare("UPDATE bookings SET status = ? WHERE id = ?");
-        $updateStmt->execute([$input['status'], $input['id']]);
+        // --- Notes Update ---
+        if (isset($input['notes'])) {
+            if ($user['role'] === 'student') {
+                http_response_code(403);
+                echo json_encode(['error' => 'Students cannot edit notes']);
+                exit;
+            }
+            $stmt = $pdo->prepare("UPDATE bookings SET notes = ? WHERE id = ?");
+            $stmt->execute([$input['notes'], $input['id']]);
+        }
 
         http_response_code(200);
         echo json_encode(['message' => 'Booking updated']);
-
-        // Notify
-        // In real app, fetch users email again
-        if ($input['status'] === 'cancelled') {
-             sendEmail('admin@drivetime.com', "Reserva Cancelada", "La reserva {$input['id']} ha sido cancelada.");
-        }
 
     } catch (\PDOException $e) {
         http_response_code(500);

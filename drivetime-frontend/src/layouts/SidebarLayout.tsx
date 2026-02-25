@@ -77,24 +77,34 @@ export function SidebarLayout({ title, links, logout, colorClass = 'text-blue-60
 
 function NavItem({ to, icon, label, onClick, activeColor }: { to: string, icon: React.ReactNode, label: string, onClick?: () => void, activeColor: string }) {
     // Extract base color (e.g. 'text-blue-600' -> 'bg-blue-600') logic roughly
-    const bgClass = activeColor.replace('text-', 'bg-');
-    const shadowClass = activeColor.replace('text-', 'shadow-').replace('600', '200');
-    const hoverTextClass = activeColor;
+    // Extract base color (e.g. 'text-blue-600' -> 'bg-blue-600') logic roughly
+    // Fix: Ensure classes are valid and don't conflict. Using a safer approach for colors.
+
+    // Map text colors to bg colors explicitly to avoid weird replacements if string format differs
+    const colorMap: Record<string, string> = {
+        'text-purple-600': 'bg-purple-600 shadow-purple-200',
+        'text-blue-600': 'bg-blue-600 shadow-blue-200',
+        'text-green-600': 'bg-green-600 shadow-green-200',
+    };
+
+    const activeClasses = colorMap[activeColor] || 'bg-slate-800 shadow-slate-200';
 
     return (
         <NavLink
             to={to}
             onClick={onClick}
             className={({ isActive }) => `
-                flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm
+                relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm
                 ${isActive
-                    ? `${bgClass} text-white shadow-md ${shadowClass}`
-                    : `text-slate-600 hover:bg-slate-50 hover:${hoverTextClass}`
+                    ? `${activeClasses} text-white shadow-md`
+                    : `text-slate-600 hover:bg-slate-50 hover:${activeColor}`
                 }
             `}
         >
-            {icon}
-            <span>{label}</span>
+            <span className="relative z-10 flex items-center gap-3">
+                {icon}
+                <span>{label}</span>
+            </span>
         </NavLink>
     );
 }

@@ -17,8 +17,8 @@ export function LandingPage() {
             <Link to="/find-school" className="hover:text-blue-600 transition-colors">Soy Alumno</Link>
           </nav>
           <div className="flex gap-4">
-            <Link to="/login/admin" className="hidden md:flex items-center text-slate-600 font-medium hover:text-blue-600">
-              Login Admin
+            <Link to="/find-school" className="hidden md:flex items-center text-slate-600 font-medium hover:text-blue-600">
+              Acceso / Login
             </Link>
             <Link
               to="/register-school"

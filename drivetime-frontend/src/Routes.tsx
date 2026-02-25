@@ -30,6 +30,7 @@ export function AppRoutes() {
       <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard-redirect" replace />} />
       <Route path="/register-school" element={<SchoolRegister />} />
       <Route path="/find-school" element={<FindSchool />} />
+      <Route path="/login/admin" element={<Navigate to="/find-school" replace />} />
       <Route path="/login/:slug?" element={!user ? <LoginPage /> : <Navigate to="/dashboard-redirect" replace />} />
       <Route path="/features" element={<FeaturesPage />} />
       <Route path="/about" element={<AboutPage />} />

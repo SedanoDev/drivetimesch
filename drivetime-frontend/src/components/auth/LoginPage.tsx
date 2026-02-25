@@ -17,12 +17,18 @@ export function LoginPage() {
       if (slug) {
           // Fetch tenant info
           fetch(`${API_URL}/public/tenants.php?slug=${slug}`)
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.json();
+            })
             .then(data => {
                 if (data.name) setTenantName(data.name);
                 else setTenantName('Autoescuela no encontrada');
             })
-            .catch(() => setTenantName('Error cargando datos'));
+            .catch((err) => {
+                console.error("Error fetching tenant:", err);
+                setTenantName('Error cargando datos');
+            });
       }
   }, [slug]);
 
@@ -38,7 +44,16 @@ export function LoginPage() {
         body: JSON.stringify({ email, password, slug }), // Send slug to backend to validate tenant context
       });
 
-      const data = await response.json();
+      // Handle non-JSON responses (e.g., PHP errors, 404 HTML)
+      const text = await response.text();
+      let data;
+      try {
+          data = JSON.parse(text);
+      } catch (e) {
+          console.error("Invalid JSON response:", text);
+          setError(`Server Error: ${response.status} ${response.statusText}`);
+          return;
+      }
 
       if (response.ok) {
         login(data.token, data.user);
@@ -46,7 +61,8 @@ export function LoginPage() {
         setError(data.error || 'Login failed');
       }
     } catch (err) {
-      setError('Network error');
+      console.error("Login network error:", err);
+      setError('Network error: Unable to reach server');
     } finally {
       setLoading(false);
     }

@@ -61,22 +61,72 @@ sudo apt install apache2 mysql-server php php-mysql php-pdo nodejs npm -y
 
 ### 3. Configuración del Backend (PHP)
 
-1.  Copia la carpeta `drivetime-backend` a `/var/www/html/api`.
+1.  Copia la carpeta `drivetime-backend` a `/var/www/html/drivetime-backend`.
 2.  Renombra `config.example.php` a `config.php` y edítalo con las credenciales de tu base de datos y una clave secreta para JWT.
     ```bash
-    mv api/config.example.php api/config.php
-    nano api/config.php
+    mv drivetime-backend/config.example.php drivetime-backend/config.php
+    nano drivetime-backend/config.php
     ```
 3.  Asegúrate de que Apache tenga habilitado `mod_rewrite` y permita `.htaccess`.
-
-### 4. Compilar y Desplegar Frontend (React)
-
-1.  En `drivetime-frontend`, crea `.env.production`:
-    ```env
-    VITE_API_URL=http://tu_dominio/api
+    ```bash
+    sudo a2enmod rewrite
+    sudo systemctl restart apache2
     ```
-2.  Compila: `npm run build`.
-3.  Copia el contenido de `dist/` a `/var/www/html/`.
+
+### 4. Configuración de Apache (VirtualHost)
+
+Para que el frontend y el backend funcionen correctamente (especialmente con React Router y la API), configura un VirtualHost.
+
+Crea el archivo `/etc/apache2/sites-available/drivetime.conf`:
+
+```apache
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html
+
+    # Configuración para el Backend (API)
+    Alias /drivetime-backend /var/www/html/drivetime-backend
+
+    <Directory /var/www/html/drivetime-backend>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # (Opcional) Si despliegas el frontend compilado en la raíz
+    # <Directory /var/www/html>
+    #     Options Indexes FollowSymLinks
+    #     AllowOverride All
+    #     Require all granted
+    #     # Redirigir todo al index.html de React (SPA)
+    #     RewriteEngine On
+    #     RewriteCond %{REQUEST_FILENAME} !-f
+    #     RewriteCond %{REQUEST_FILENAME} !-d
+    #     RewriteRule ^ index.html [QSA,L]
+    # </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+```
+
+Activa el sitio:
+```bash
+sudo a2ensite drivetime.conf
+sudo systemctl reload apache2
+```
+
+### 5. Ejecutar Frontend (Desarrollo)
+
+Si estás probando en local sin compilar:
+
+1.  Asegúrate de que el backend esté accesible en `http://localhost/drivetime-backend/api`.
+2.  En `drivetime-frontend`:
+    ```bash
+    npm install
+    npm run dev
+    ```
+3.  Accede a `http://localhost:5173`.
 
 ---
 

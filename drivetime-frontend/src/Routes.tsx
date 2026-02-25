@@ -9,6 +9,8 @@ import { BookingsManager } from './components/admin/BookingsManager';
 import { InstructorsManager } from './components/admin/InstructorsManager';
 import { UsersManager } from './components/admin/UsersManager';
 import { TenantSettings } from './components/admin/TenantSettings';
+import { VehiclesManager } from './components/admin/VehiclesManager';
+import { PacksManager } from './components/admin/PacksManager';
 import { StudentBookingPage } from './pages/student/StudentBookingPage';
 import { StudentMyClasses } from './pages/student/StudentMyClasses';
 import { InstructorDashboard } from './pages/instructor/InstructorDashboard';
@@ -76,6 +78,8 @@ export function AppRoutes() {
          <Route path="bookings" element={<BookingsManager />} />
          <Route path="users" element={<UsersManager />} />
          <Route path="instructors" element={<InstructorsManager />} />
+         <Route path="vehicles" element={<VehiclesManager />} />
+         <Route path="packs" element={<PacksManager />} />
          <Route path="config" element={<TenantSettings />} />
          <Route path="profile" element={<ProfilePage />} />
       </Route>

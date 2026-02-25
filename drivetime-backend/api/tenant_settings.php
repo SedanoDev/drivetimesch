@@ -2,7 +2,6 @@
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/auth/jwt_helper.php';
 
-// Auth Middleware
 if (!isset($jwt_secret_key)) { http_response_code(500); exit; }
 $headers = getallheaders();
 $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
@@ -20,10 +19,10 @@ if (!$user || ($user['role'] !== 'admin' && $user['role'] !== 'superadmin')) {
     exit;
 }
 
-// --- GET: Tenant Settings ---
+// GET Settings
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
-        $stmt = $pdo->prepare("SELECT name, slug, created_at FROM tenants WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
         $stmt->execute([$user['tenant_id']]);
         echo json_encode($stmt->fetch());
     } catch (\PDOException $e) {
@@ -33,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// --- PUT: Update Settings ---
+// PUT Update Settings
 if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $input = json_decode(file_get_contents('php://input'), true);
 
@@ -44,9 +43,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     }
 
     try {
-        // Not allowing slug change easily as it breaks URLs for users
-        $stmt = $pdo->prepare("UPDATE tenants SET name = ? WHERE id = ?");
-        $stmt->execute([$input['name'], $user['tenant_id']]);
+        $sql = "UPDATE tenants SET
+            name = ?,
+            contact_email = ?,
+            contact_phone = ?,
+            contact_address = ?,
+            primary_color = ?,
+            secondary_color = ?,
+            class_price = ?,
+            class_duration_minutes = ?,
+            min_booking_notice_hours = ?,
+            min_cancellation_notice_hours = ?,
+            min_practice_hours_required = ?,
+            welcome_message = ?
+            WHERE id = ?";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            $input['name'],
+            $input['contact_email'] ?? '',
+            $input['contact_phone'] ?? '',
+            $input['contact_address'] ?? '',
+            $input['primary_color'] ?? '#2563EB',
+            $input['secondary_color'] ?? '#1E40AF',
+            $input['class_price'] ?? 30.00,
+            $input['class_duration_minutes'] ?? 60,
+            $input['min_booking_notice_hours'] ?? 24,
+            $input['min_cancellation_notice_hours'] ?? 24,
+            $input['min_practice_hours_required'] ?? 20,
+            $input['welcome_message'] ?? '',
+            $user['tenant_id']
+        ]);
 
         http_response_code(200);
         echo json_encode(['message' => 'Settings updated']);

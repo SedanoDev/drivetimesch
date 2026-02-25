@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { ChevronLeft, ChevronRight, Clock, MapPin, User, CheckCircle, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, CheckCircle, Save } from 'lucide-react';
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Modal } from '../../components/ui/Modal';

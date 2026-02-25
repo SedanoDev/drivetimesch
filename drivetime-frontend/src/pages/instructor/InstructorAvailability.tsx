@@ -21,7 +21,7 @@ const DEFAULT_SCHEDULE: DaySchedule[] = [
 ];
 
 export function InstructorAvailability() {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_SCHEDULE);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

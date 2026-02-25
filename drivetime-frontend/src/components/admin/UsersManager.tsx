@@ -31,12 +31,22 @@ export function UsersManager() {
     fetch(`${API_URL}/users.php`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(res => res.json())
-    .then(data => {
-        if (Array.isArray(data)) setUsers(data);
-        else setError('Error cargando usuarios');
+    .then(async res => {
+        const text = await res.text();
+        try {
+            const data = JSON.parse(text);
+            if (res.ok) {
+                if (Array.isArray(data)) setUsers(data);
+                else setUsers([]);
+            } else {
+                throw new Error(data.error || 'Error del servidor');
+            }
+        } catch (e) {
+            console.error("JSON Error:", text);
+            throw new Error(`Error de conexión: ${res.statusText}`);
+        }
     })
-    .catch(() => setError('Error de conexión'))
+    .catch((err) => setError(err.message))
     .finally(() => setLoading(false));
   };
 
@@ -46,6 +56,7 @@ export function UsersManager() {
 
   const handleCreate = async (e: React.FormEvent) => {
       e.preventDefault();
+      setError('');
       try {
           const res = await fetch(`${API_URL}/users.php`, {
               method: 'POST',
@@ -56,17 +67,24 @@ export function UsersManager() {
               body: JSON.stringify(newUser)
           });
 
+          const text = await res.text();
+          let data;
+          try {
+              data = JSON.parse(text);
+          } catch (e) {
+              throw new Error('Respuesta inválida del servidor');
+          }
+
           if (res.ok) {
               setShowForm(false);
               setNewUser({ full_name: '', email: '', role: 'student' });
               fetchUsers();
               alert('Usuario creado con contraseña por defecto: 123456');
           } else {
-              const data = await res.json();
               alert(data.error || 'Error al crear');
           }
-      } catch (err) {
-          alert('Error de conexión');
+      } catch (err: any) {
+          alert(err.message || 'Error de conexión');
       }
   };
 

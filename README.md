@@ -15,8 +15,10 @@ Hemos creado usuarios con diferentes roles para que puedas probar todas las func
 
 | Rol | Email | Permisos |
 | :--- | :--- | :--- |
-| **Administrador** | `admin@demo.com` | Acceso total al Panel de Administración (Dashboard, Reservas, Profesores). |
-| **Instructor** | `carlos@demo.com` | Gestión de sus clases (Vista básica por ahora). |
+| **SuperAdmin** | `superadmin@drivetime.com` | Gestión de la plataforma y todos los tenants. |
+| **Administrador** | `admin@demo.com` | Acceso total a la autoescuela "Demo" (Dashboard, Reservas, Profesores). |
+| **Instructor 1** | `carlos@demo.com` | Gestión de clases y horario (Coche Manual). |
+| **Instructor 2** | `ana@demo.com` | Gestión de clases y horario (Coche Automático). |
 | **Alumno** | `alumno@demo.com` | Realizar nuevas reservas y cancelar las propias. |
 
 ---

@@ -14,6 +14,12 @@ import { InstructorAvailability } from './pages/instructor/InstructorAvailabilit
 import { LandingPage } from './pages/public/LandingPage';
 import { SchoolRegister } from './pages/public/SchoolRegister';
 import { FindSchool } from './pages/public/FindSchool';
+import { FeaturesPage } from './pages/public/FeaturesPage';
+import { AboutPage } from './pages/public/AboutPage';
+import { BlogPage } from './pages/public/BlogPage';
+import { ContactPage } from './pages/public/ContactPage';
+import { PrivacyPage } from './pages/public/PrivacyPage';
+import { TermsPage } from './pages/public/TermsPage';
 
 export function AppRoutes() {
   const { user } = useAuth();
@@ -25,6 +31,12 @@ export function AppRoutes() {
       <Route path="/register-school" element={<SchoolRegister />} />
       <Route path="/find-school" element={<FindSchool />} />
       <Route path="/login/:slug?" element={!user ? <LoginPage /> : <Navigate to="/dashboard-redirect" replace />} />
+      <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/blog" element={<BlogPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
 
       {/* Redirect Helper */}
       <Route path="/dashboard-redirect" element={

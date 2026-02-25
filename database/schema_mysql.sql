@@ -93,7 +93,8 @@ INSERT INTO tenants (id, name, slug) VALUES (@tenant_id, 'Autoescuela Demo', 'de
 -- Hash generated via PHP: password_hash('123456', PASSWORD_DEFAULT)
 INSERT INTO users (id, tenant_id, email, password_hash, full_name, role) VALUES
 (UUID(), @tenant_id, 'admin@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Admin Demo', 'admin'),
-(UUID(), @tenant_id, 'alumno@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Alumno Demo', 'student');
+(UUID(), @tenant_id, 'alumno@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Alumno Demo', 'student'),
+(UUID(), @tenant_id, 'superadmin@drivetime.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Super Admin', 'superadmin');
 
 -- 3. Create Instructor Users & Profiles
 SET @inst1_id = UUID();

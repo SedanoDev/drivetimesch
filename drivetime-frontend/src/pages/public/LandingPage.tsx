@@ -12,7 +12,7 @@ export function LandingPage() {
             <span className="font-bold text-xl tracking-tight">DriveTime SaaS</span>
           </div>
           <nav className="hidden md:flex gap-8 text-sm font-medium text-slate-600">
-            <a href="#features" className="hover:text-blue-600 transition-colors">Características</a>
+            <Link to="/features" className="hover:text-blue-600 transition-colors">Características</Link>
             <a href="#pricing" className="hover:text-blue-600 transition-colors">Precios</a>
             <Link to="/find-school" className="hover:text-blue-600 transition-colors">Soy Alumno</Link>
           </nav>
@@ -55,7 +55,7 @@ export function LandingPage() {
               <ChevronRight className="w-5 h-5" />
             </Link>
             <Link
-              to="/demo"
+              to="/login/demo"
               className="flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-200 px-8 py-4 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all"
             >
               Ver Demo
@@ -133,24 +133,24 @@ export function LandingPage() {
           <div>
             <h4 className="text-white font-bold mb-4">Producto</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white">Características</a></li>
-              <li><a href="#" className="hover:text-white">Precios</a></li>
-              <li><a href="#" className="hover:text-white">Seguridad</a></li>
+              <li><Link to="/features" className="hover:text-white">Características</Link></li>
+              <li><a href="#pricing" className="hover:text-white">Precios</a></li>
+              <li><Link to="/privacy" className="hover:text-white">Seguridad</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-bold mb-4">Compañía</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white">Sobre nosotros</a></li>
-              <li><a href="#" className="hover:text-white">Blog</a></li>
-              <li><a href="#" className="hover:text-white">Contacto</a></li>
+              <li><Link to="/about" className="hover:text-white">Sobre nosotros</Link></li>
+              <li><Link to="/blog" className="hover:text-white">Blog</Link></li>
+              <li><Link to="/contact" className="hover:text-white">Contacto</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-bold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white">Privacidad</a></li>
-              <li><a href="#" className="hover:text-white">Términos</a></li>
+              <li><Link to="/privacy" className="hover:text-white">Privacidad</Link></li>
+              <li><Link to="/terms" className="hover:text-white">Términos</Link></li>
             </ul>
           </div>
         </div>

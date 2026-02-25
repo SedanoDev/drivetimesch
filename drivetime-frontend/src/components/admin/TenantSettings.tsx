@@ -116,16 +116,25 @@ export function TenantSettings() {
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
-                        <input className="w-full p-2 rounded border" value={settings.contact_email} onChange={e => setSettings({...settings, contact_email: e.target.value})} />
+                        <div className="relative">
+                            <Mail className="absolute left-2.5 top-2.5 text-slate-400" size={16} />
+                            <input className="w-full pl-9 p-2 rounded border" value={settings.contact_email} onChange={e => setSettings({...settings, contact_email: e.target.value})} />
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Teléfono</label>
-                        <input className="w-full p-2 rounded border" value={settings.contact_phone} onChange={e => setSettings({...settings, contact_phone: e.target.value})} />
+                        <div className="relative">
+                            <Phone className="absolute left-2.5 top-2.5 text-slate-400" size={16} />
+                            <input className="w-full pl-9 p-2 rounded border" value={settings.contact_phone} onChange={e => setSettings({...settings, contact_phone: e.target.value})} />
+                        </div>
                     </div>
                 </div>
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Dirección</label>
-                    <input className="w-full p-2 rounded border" value={settings.contact_address} onChange={e => setSettings({...settings, contact_address: e.target.value})} />
+                    <div className="relative">
+                        <MapPin className="absolute left-2.5 top-2.5 text-slate-400" size={16} />
+                        <input className="w-full pl-9 p-2 rounded border" value={settings.contact_address} onChange={e => setSettings({...settings, contact_address: e.target.value})} />
+                    </div>
                 </div>
             </div>
 
@@ -137,11 +146,17 @@ export function TenantSettings() {
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Precio Clase (€)</label>
-                        <input type="number" className="w-full p-2 rounded border" value={settings.class_price} onChange={e => setSettings({...settings, class_price: parseFloat(e.target.value)})} />
+                        <div className="relative">
+                            <DollarSign className="absolute left-2.5 top-2.5 text-slate-400" size={16} />
+                            <input type="number" className="w-full pl-9 p-2 rounded border" value={settings.class_price} onChange={e => setSettings({...settings, class_price: parseFloat(e.target.value)})} />
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Duración (min)</label>
-                        <input type="number" className="w-full p-2 rounded border" value={settings.class_duration_minutes} onChange={e => setSettings({...settings, class_duration_minutes: parseInt(e.target.value)})} />
+                        <div className="relative">
+                            <Clock className="absolute left-2.5 top-2.5 text-slate-400" size={16} />
+                            <input type="number" className="w-full pl-9 p-2 rounded border" value={settings.class_duration_minutes} onChange={e => setSettings({...settings, class_duration_minutes: parseInt(e.target.value)})} />
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Aviso Reserva (h)</label>
@@ -149,7 +164,10 @@ export function TenantSettings() {
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Aviso Cancelación (h)</label>
-                        <input type="number" className="w-full p-2 rounded border" value={settings.min_cancellation_notice_hours} onChange={e => setSettings({...settings, min_cancellation_notice_hours: parseInt(e.target.value)})} />
+                        <div className="relative">
+                            <AlertTriangle className="absolute left-2.5 top-2.5 text-slate-400" size={16} />
+                            <input type="number" className="w-full pl-9 p-2 rounded border" value={settings.min_cancellation_notice_hours} onChange={e => setSettings({...settings, min_cancellation_notice_hours: parseInt(e.target.value)})} />
+                        </div>
                     </div>
                 </div>
                 <div>

@@ -1,6 +1,6 @@
 import { useAuth } from '../hooks/useAuth';
 import { Outlet, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, User, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, User } from 'lucide-react';
 import { SidebarLayout } from './SidebarLayout';
 
 export function InstructorLayout() {
@@ -13,7 +13,7 @@ export function InstructorLayout() {
   const links = [
       { to: "/instructor/dashboard", icon: <LayoutDashboard size={20} />, label: "Agenda" },
       { to: "/instructor/students", icon: <Users size={20} />, label: "Mis Alumnos" },
-      { to: "/instructor/availability", icon: <Clock size={20} />, label: "Disponibilidad" },
+      { to: "/instructor/availability", icon: <Calendar size={20} />, label: "Disponibilidad" },
       { to: "/instructor/profile", icon: <User size={20} />, label: "Mi Perfil" },
   ];
 

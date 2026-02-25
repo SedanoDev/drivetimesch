@@ -2,6 +2,10 @@
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/auth/jwt_helper.php';
 
+// Disable display errors to prevent JSON corruption
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 if (!isset($jwt_secret_key)) { http_response_code(500); exit; }
 $headers = getallheaders();
 $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
@@ -10,7 +14,11 @@ $user = null;
 if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
     $token = $matches[1];
     $decoded = JWT::decode($token, $jwt_secret_key);
-    if ($decoded) $user = $decoded;
+    if (is_array($decoded)) {
+        $user = $decoded;
+    } elseif (is_object($decoded)) {
+        $user = (array)$decoded;
+    }
 }
 
 if (!$user || ($user['role'] !== 'admin' && $user['role'] !== 'superadmin')) {
@@ -35,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // POST: Create Pack
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
-    if (!isset($input['name'], $input['classes_count'], $input['price'])) {
+    if (empty($input['name']) || empty($input['classes_count']) || empty($input['price'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Missing fields']);
         exit;

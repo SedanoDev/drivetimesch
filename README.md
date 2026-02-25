@@ -15,8 +15,10 @@ Hemos creado usuarios con diferentes roles para que puedas probar todas las func
 
 | Rol | Email | Permisos |
 | :--- | :--- | :--- |
-| **Administrador** | `admin@demo.com` | Acceso total al Panel de Administración (Dashboard, Reservas, Profesores). |
-| **Instructor** | `carlos@demo.com` | Gestión de sus clases (Vista básica por ahora). |
+| **SuperAdmin** | `superadmin@drivetime.com` | Gestión de la plataforma y todos los tenants. |
+| **Administrador** | `admin@demo.com` | Acceso total a la autoescuela "Demo" (Dashboard, Reservas, Profesores). |
+| **Instructor 1** | `carlos@demo.com` | Gestión de clases y horario (Coche Manual). |
+| **Instructor 2** | `ana@demo.com` | Gestión de clases y horario (Coche Automático). |
 | **Alumno** | `alumno@demo.com` | Realizar nuevas reservas y cancelar las propias. |
 
 ---
@@ -59,22 +61,92 @@ sudo apt install apache2 mysql-server php php-mysql php-pdo nodejs npm -y
 
 ### 3. Configuración del Backend (PHP)
 
-1.  Copia la carpeta `drivetime-backend` a `/var/www/html/api`.
-2.  Renombra `config.example.php` a `config.php` y edítalo con las credenciales de tu base de datos y una clave secreta para JWT.
+**Nota:** El archivo `config.php` no está incluido en la distribución por seguridad. Debes crearlo a partir del ejemplo.
+
+1.  Copia la carpeta `drivetime-backend` a `/var/www/html/drivetime-backend`.
+2.  Copia el archivo de configuración de ejemplo:
     ```bash
-    mv api/config.example.php api/config.php
-    nano api/config.php
+    cp drivetime-backend/config.example.php drivetime-backend/config.php
+    ```
+3.  Edita `config.php` con las credenciales de tu base de datos y una clave secreta para JWT.
+    ```bash
+    nano drivetime-backend/config.php
     ```
 3.  Asegúrate de que Apache tenga habilitado `mod_rewrite` y permita `.htaccess`.
-
-### 4. Compilar y Desplegar Frontend (React)
-
-1.  En `drivetime-frontend`, crea `.env.production`:
-    ```env
-    VITE_API_URL=http://tu_dominio/api
+    ```bash
+    sudo a2enmod rewrite
+    sudo systemctl restart apache2
     ```
-2.  Compila: `npm run build`.
-3.  Copia el contenido de `dist/` a `/var/www/html/`.
+
+### 4. Configuración de Apache (VirtualHost)
+
+Para que el frontend y el backend funcionen correctamente (especialmente con React Router y la API), configura un VirtualHost.
+
+Crea el archivo `/etc/apache2/sites-available/drivetime.conf`:
+
+```apache
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html
+
+    # Configuración para el Backend (API)
+    Alias /drivetime-backend /var/www/html/drivetime-backend
+
+    <Directory /var/www/html/drivetime-backend>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # (Opcional) Si despliegas el frontend compilado en la raíz
+    # <Directory /var/www/html>
+    #     Options Indexes FollowSymLinks
+    #     AllowOverride All
+    #     Require all granted
+    #     # Redirigir todo al index.html de React (SPA)
+    #     RewriteEngine On
+    #     RewriteCond %{REQUEST_FILENAME} !-f
+    #     RewriteCond %{REQUEST_FILENAME} !-d
+    #     RewriteRule ^ index.html [QSA,L]
+    # </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+```
+
+Activa el sitio:
+```bash
+sudo a2ensite drivetime.conf
+sudo systemctl reload apache2
+```
+
+### 5. Configuración del Frontend (Variables de Entorno)
+
+Antes de compilar o ejecutar el frontend, necesitas configurar la URL de la API.
+
+1.  Ve a la carpeta `drivetime-frontend`.
+2.  Copia el archivo de ejemplo:
+    ```bash
+    cp .env.example .env
+    ```
+3.  Edita `.env` si tu backend no está en `http://localhost/drivetime-backend/api`.
+    ```bash
+    nano .env
+    # VITE_API_URL=http://tudominio.com/drivetime-backend/api
+    ```
+
+### 6. Ejecutar Frontend (Desarrollo)
+
+Si estás probando en local sin compilar:
+
+1.  Asegúrate de haber configurado el `.env` (Paso 5).
+2.  En `drivetime-frontend`:
+    ```bash
+    npm install
+    npm run dev
+    ```
+3.  Accede a `http://localhost:5173`.
 
 ---
 

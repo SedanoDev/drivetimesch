@@ -83,7 +83,14 @@ export function InstructorAvailability() {
 
   return (
     <div>
-        <h1 className="text-2xl font-bold mb-6 text-slate-800">Mi Disponibilidad</h1>
+        <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-slate-800">Mi Disponibilidad</h1>
+            {user && (
+                <div className="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">
+                    Instructor: <span className="font-bold text-blue-600">{user.name}</span>
+                </div>
+            )}
+        </div>
 
         {message && (
             <div className={`mb-4 p-3 rounded-xl text-sm font-bold ${message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>

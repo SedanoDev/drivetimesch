@@ -36,7 +36,7 @@ export function InstructorStudents() {
   return (
     <div>
         <h1 className="text-2xl font-bold mb-6 text-slate-800">Mis Alumnos</h1>
-
+        
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <table className="w-full text-left">
                 <thead className="bg-slate-50 border-b border-slate-100">

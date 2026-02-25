@@ -66,7 +66,7 @@ export function BlogPage() {
           ))}
         </div>
       </main>
-
+      
       <footer className="bg-slate-900 text-slate-400 py-12 text-center">
         <p>&copy; {new Date().getFullYear()} DriveTime SaaS.</p>
       </footer>

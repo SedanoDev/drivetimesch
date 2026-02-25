@@ -27,8 +27,8 @@ export function TermsPage() {
             <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">1. Aceptación de los Términos</h2>
             <p>
-                Al acceder o utilizar nuestro sitio web y servicios, usted acepta estar sujeto a estos
-                Términos y Condiciones y a nuestra Política de Privacidad. Si no está de acuerdo,
+                Al acceder o utilizar nuestro sitio web y servicios, usted acepta estar sujeto a estos 
+                Términos y Condiciones y a nuestra Política de Privacidad. Si no está de acuerdo, 
                 por favor no utilice nuestros servicios.
             </p>
             </section>
@@ -36,8 +36,8 @@ export function TermsPage() {
             <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">2. Descripción del Servicio</h2>
             <p>
-                DriveTime proporciona una plataforma SaaS para la gestión de reservas y operaciones
-                de autoescuelas. Nos reservamos el derecho de modificar o discontinuar el servicio
+                DriveTime proporciona una plataforma SaaS para la gestión de reservas y operaciones 
+                de autoescuelas. Nos reservamos el derecho de modificar o discontinuar el servicio 
                 en cualquier momento sin previo aviso.
             </p>
             </section>
@@ -45,7 +45,7 @@ export function TermsPage() {
             <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">3. Cuentas de Usuario</h2>
             <p>
-                Usted es responsable de mantener la confidencialidad de su contraseña y cuenta,
+                Usted es responsable de mantener la confidencialidad de su contraseña y cuenta, 
                 y es totalmente responsable de todas las actividades que ocurran bajo su contraseña o cuenta.
             </p>
             </section>
@@ -53,8 +53,8 @@ export function TermsPage() {
             <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">4. Propiedad Intelectual</h2>
             <p>
-                Todo el contenido y materiales disponibles en DriveTime, incluyendo pero no limitado a
-                texto, gráficos, nombre del sitio web, código, imágenes y logotipos son propiedad intelectual
+                Todo el contenido y materiales disponibles en DriveTime, incluyendo pero no limitado a 
+                texto, gráficos, nombre del sitio web, código, imágenes y logotipos son propiedad intelectual 
                 de DriveTime y están protegidos por las leyes de derechos de autor y marcas registradas aplicables.
             </p>
             </section>
@@ -62,14 +62,14 @@ export function TermsPage() {
             <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">5. Limitación de Responsabilidad</h2>
             <p>
-                En ningún caso DriveTime será responsable por daños directos, indirectos, incidentales,
+                En ningún caso DriveTime será responsable por daños directos, indirectos, incidentales, 
                 especiales o consecuentes que resulten del uso o la imposibilidad de usar el servicio.
             </p>
             </section>
         </div>
 
       </main>
-
+      
       <footer className="bg-slate-900 text-slate-400 py-12 text-center">
         <p>&copy; {new Date().getFullYear()} DriveTime SaaS.</p>
       </footer>

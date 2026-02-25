@@ -12,7 +12,7 @@ interface InstructorCardProps {
 
 export function InstructorCard({ instructor, isSelected, isAvailable, onSelect, selectedTime }: InstructorCardProps) {
   return (
-    <div
+    <div 
       onClick={() => isAvailable && onSelect()}
       className={cn(
         "relative flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 bg-white w-full",
@@ -22,9 +22,9 @@ export function InstructorCard({ instructor, isSelected, isAvailable, onSelect, 
     >
       {/* Avatar */}
       <div className="relative shrink-0">
-        <img
-          src={instructor.image_url}
-          alt={instructor.name}
+        <img 
+          src={instructor.image_url} 
+          alt={instructor.name} 
           className={cn(
             "w-14 h-14 rounded-full object-cover border-2 bg-slate-200",
             isSelected ? "border-blue-200" : "border-slate-100"
@@ -43,15 +43,15 @@ export function InstructorCard({ instructor, isSelected, isAvailable, onSelect, 
         <h4 className={cn("font-bold text-base truncate", isSelected ? "text-blue-700" : "text-slate-800")}>
           {instructor.name}
         </h4>
-
+        
         <p className="text-xs text-slate-500 truncate">{instructor.bio}</p>
-
+        
         <div className="flex items-center gap-1.5 mt-1">
           <div className="flex">
             {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className={cn("w-3 h-3 fill-current", star <= Math.round(instructor.rating) ? "text-yellow-400" : "text-slate-200")}
+              <Star 
+                key={star} 
+                className={cn("w-3 h-3 fill-current", star <= Math.round(instructor.rating) ? "text-yellow-400" : "text-slate-200")} 
               />
             ))}
           </div>

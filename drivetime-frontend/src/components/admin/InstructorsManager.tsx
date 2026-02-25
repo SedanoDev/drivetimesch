@@ -52,7 +52,7 @@ export function InstructorsManager() {
                    )}
                </div>
             </div>
-
+            
             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button className="text-slate-400 hover:text-blue-600 text-xs font-medium px-2 py-1">
                     Editar

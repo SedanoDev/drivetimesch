@@ -40,9 +40,9 @@ export function ProfilePage() {
       try {
           const res = await fetch(`${API_URL}/profile.php`, {
               method: 'PUT',
-              headers: {
+              headers: { 
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
+                  'Authorization': `Bearer ${token}` 
               },
               body: JSON.stringify({
                   full_name: profile.full_name,
@@ -89,7 +89,7 @@ export function ProfilePage() {
             <form onSubmit={handleSave} className="space-y-6">
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Email</label>
-                    <input
+                    <input 
                         disabled
                         value={profile.email}
                         className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
@@ -101,7 +101,7 @@ export function ProfilePage() {
                     <label className="block text-sm font-bold text-slate-700 mb-2">Nombre Completo</label>
                     <div className="relative">
                         <User className="absolute left-3 top-3.5 text-slate-400" size={20} />
-                        <input
+                        <input 
                             required
                             value={profile.full_name}
                             onChange={e => setProfile({...profile, full_name: e.target.value})}
@@ -114,7 +114,7 @@ export function ProfilePage() {
                     <label className="block text-sm font-bold text-slate-700 mb-2">Nueva Contraseña (Opcional)</label>
                     <div className="relative">
                         <Lock className="absolute left-3 top-3.5 text-slate-400" size={20} />
-                        <input
+                        <input 
                             type="password"
                             placeholder="Dejar en blanco para no cambiar"
                             value={profile.password}
@@ -126,8 +126,8 @@ export function ProfilePage() {
                 </div>
 
                 <div className="pt-4">
-                    <button
-                        type="submit"
+                    <button 
+                        type="submit" 
                         disabled={saving}
                         className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >

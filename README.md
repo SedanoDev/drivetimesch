@@ -115,7 +115,7 @@ Para que la aplicación funcione correctamente (especialmente las rutas de React
     <VirtualHost *:80>
         ServerName tu-dominio.com
         ServerAdmin webmaster@localhost
-
+        
         # 1. Servir el Frontend compilado como raíz
         DocumentRoot /var/www/html/drivetime/drivetime-frontend/dist
 
@@ -123,7 +123,7 @@ Para que la aplicación funcione correctamente (especialmente las rutas de React
             Options Indexes FollowSymLinks
             AllowOverride All
             Require all granted
-
+            
             # Redirigir todas las rutas a index.html (necesario para React Router)
             RewriteEngine On
             RewriteCond %{REQUEST_FILENAME} !-f

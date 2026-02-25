@@ -47,9 +47,9 @@ export function TenantSettings() {
       try {
           const res = await fetch(`${API_URL}/tenant_settings.php`, {
               method: 'PUT',
-              headers: {
+              headers: { 
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
+                  'Authorization': `Bearer ${token}` 
               },
               body: JSON.stringify(settings)
           });
@@ -72,7 +72,7 @@ export function TenantSettings() {
     <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-slate-800">Configuración de la Escuela</h1>
-            <button
+            <button 
                 onClick={handleSave}
                 disabled={saving}
                 className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50"

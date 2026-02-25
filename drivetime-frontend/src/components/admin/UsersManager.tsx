@@ -17,7 +17,7 @@ export function UsersManager() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
+  
   // New User Form
   const [showForm, setShowForm] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -49,13 +49,13 @@ export function UsersManager() {
       try {
           const res = await fetch(`${API_URL}/users.php`, {
               method: 'POST',
-              headers: {
+              headers: { 
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
+                  'Authorization': `Bearer ${token}` 
               },
               body: JSON.stringify(newUser)
           });
-
+          
           if (res.ok) {
               setShowForm(false);
               setNewUser({ full_name: '', email: '', role: 'student' });
@@ -72,13 +72,13 @@ export function UsersManager() {
 
   const handleDelete = async (id: string) => {
       if (!confirm('¿Seguro que quieres eliminar este usuario?')) return;
-
+      
       try {
           const res = await fetch(`${API_URL}/users.php?id=${id}`, {
               method: 'DELETE',
               headers: { 'Authorization': `Bearer ${token}` }
           });
-
+          
           if (res.ok) {
               setUsers(users.filter(u => u.id !== id));
           } else {
@@ -95,7 +95,7 @@ export function UsersManager() {
     <div className="space-y-6">
         <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-slate-800">Gestión de Usuarios</h1>
-            <button
+            <button 
                 onClick={() => setShowForm(!showForm)}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors"
             >
@@ -117,7 +117,7 @@ export function UsersManager() {
                 <form onSubmit={handleCreate} className="grid md:grid-cols-4 gap-4 items-end">
                     <div>
                         <label className="block text-sm font-medium text-slate-600 mb-1">Nombre Completo</label>
-                        <input
+                        <input 
                             required
                             className="w-full p-2 rounded-lg border border-slate-300"
                             value={newUser.full_name}
@@ -126,7 +126,7 @@ export function UsersManager() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
-                        <input
+                        <input 
                             required
                             type="email"
                             className="w-full p-2 rounded-lg border border-slate-300"
@@ -136,7 +136,7 @@ export function UsersManager() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-600 mb-1">Rol</label>
-                        <select
+                        <select 
                             className="w-full p-2 rounded-lg border border-slate-300 bg-white"
                             value={newUser.role}
                             onChange={e => setNewUser({...newUser, role: e.target.value as any})}
@@ -176,14 +176,14 @@ export function UsersManager() {
                                 <td className="p-4 text-slate-500">{user.email}</td>
                                 <td className="p-4">
                                     <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                        ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                                        user.role === 'instructor' ? 'bg-blue-100 text-blue-700' :
+                                        ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 
+                                        user.role === 'instructor' ? 'bg-blue-100 text-blue-700' : 
                                         'bg-green-100 text-green-700'}`}>
                                         {user.role}
                                     </span>
                                 </td>
                                 <td className="p-4 text-right">
-                                    <button
+                                    <button 
                                         onClick={() => handleDelete(user.id)}
                                         className="text-slate-400 hover:text-red-500 transition-colors p-1"
                                         title="Eliminar usuario"

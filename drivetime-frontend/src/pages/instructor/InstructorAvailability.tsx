@@ -50,13 +50,13 @@ export function InstructorAvailability() {
   const handleSave = async () => {
       setSaving(true);
       setMessage('');
-
+      
       try {
           const res = await fetch(`${API_URL}/availability.php`, {
               method: 'POST',
-              headers: {
+              headers: { 
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
+                  'Authorization': `Bearer ${token}` 
               },
               body: JSON.stringify(schedule.map(s => ({
                   day: s.day,
@@ -88,15 +88,15 @@ export function InstructorAvailability() {
                 <h1 className="text-2xl font-bold text-slate-800">Mi Horario Semanal</h1>
                 <p className="text-slate-500 text-sm mt-1">Define tu jornada laboral habitual.</p>
             </div>
-            <button
-                onClick={handleSave}
+            <button 
+                onClick={handleSave} 
                 disabled={saving}
                 className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200"
             >
                 {saving ? 'Guardando...' : <><Check size={18} /> Guardar Cambios</>}
             </button>
         </div>
-
+        
         {message && (
             <div className={`mb-6 p-4 rounded-xl text-sm font-bold ${message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
                 {message}
@@ -113,48 +113,48 @@ export function InstructorAvailability() {
                             </div>
                             <span className={`font-bold ${day.active ? 'text-slate-800' : 'text-slate-400'}`}>{day.name}</span>
                         </div>
-
+                        
                         <div className="flex-1 flex items-center gap-4">
                             <div className="relative flex-1">
                                 <Clock size={16} className="absolute left-3 top-3 text-slate-400" />
-                                <input
-                                    type="time"
-                                    value={day.start}
+                                <input 
+                                    type="time" 
+                                    value={day.start} 
                                     disabled={!day.active}
                                     onChange={(e) => {
                                         const newSched = [...schedule];
                                         newSched[idx].start = e.target.value;
                                         setSchedule(newSched);
-                                    }}
-                                    className="w-full pl-9 p-2.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:bg-slate-100"
+                                    }} 
+                                    className="w-full pl-9 p-2.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:bg-slate-100" 
                                 />
                             </div>
                             <span className="text-slate-400 font-bold">-</span>
                             <div className="relative flex-1">
                                 <Clock size={16} className="absolute left-3 top-3 text-slate-400" />
-                                <input
-                                    type="time"
-                                    value={day.end}
+                                <input 
+                                    type="time" 
+                                    value={day.end} 
                                     disabled={!day.active}
                                     onChange={(e) => {
                                         const newSched = [...schedule];
                                         newSched[idx].end = e.target.value;
                                         setSchedule(newSched);
-                                    }}
-                                    className="w-full pl-9 p-2.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:bg-slate-100"
+                                    }} 
+                                    className="w-full pl-9 p-2.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:bg-slate-100" 
                                 />
                             </div>
                         </div>
-
+                        
                         <label className="flex items-center gap-2 cursor-pointer relative">
-                            <input
-                                type="checkbox"
-                                checked={day.active}
+                            <input 
+                                type="checkbox" 
+                                checked={day.active} 
                                 onChange={() => {
                                     const newSched = [...schedule];
                                     newSched[idx].active = !newSched[idx].active;
                                     setSchedule(newSched);
-                                }}
+                                }} 
                                 className="sr-only peer"
                             />
                             <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>

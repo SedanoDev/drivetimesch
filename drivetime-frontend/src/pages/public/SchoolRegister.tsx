@@ -28,7 +28,7 @@ export function SchoolRegister() {
             body: JSON.stringify(formData)
         });
         const data = await res.json();
-
+        
         if (res.ok) {
             setStep(2); // Success view
         } else {
@@ -50,7 +50,7 @@ export function SchoolRegister() {
                   </div>
                   <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Registro Completado!</h2>
                   <p className="text-slate-500 mb-8">Tu autoescuela <strong>{formData.schoolName}</strong> ya está lista.</p>
-
+                  
                   <div className="bg-slate-50 p-4 rounded-xl mb-8 border border-slate-200">
                       <p className="text-xs text-slate-400 uppercase font-bold mb-2">Tu enlace de acceso:</p>
                       <p className="font-mono text-blue-600 break-all">drivetime.com/login/{formData.slug}</p>
@@ -91,7 +91,7 @@ export function SchoolRegister() {
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Nombre Autoescuela</label>
-                    <input
+                    <input 
                         required
                         className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
                         placeholder="Ej: Autoescuela Veloz"
@@ -103,7 +103,7 @@ export function SchoolRegister() {
                     <label className="block text-sm font-bold text-slate-700 mb-1">URL Personalizada (Slug)</label>
                     <div className="flex items-center">
                         <span className="bg-slate-100 border border-r-0 border-slate-200 text-slate-500 p-3 rounded-l-xl text-sm">drivetime.com/</span>
-                        <input
+                        <input 
                             required
                             className="w-full p-3 rounded-r-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
                             value={formData.slug}
@@ -114,7 +114,7 @@ export function SchoolRegister() {
                 <div className="h-px bg-slate-100 my-6"></div>
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Nombre Administrador</label>
-                    <input
+                    <input 
                         required
                         className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
                         value={formData.adminName}
@@ -123,7 +123,7 @@ export function SchoolRegister() {
                 </div>
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
-                    <input
+                    <input 
                         required
                         type="email"
                         className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
@@ -133,7 +133,7 @@ export function SchoolRegister() {
                 </div>
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Contraseña</label>
-                    <input
+                    <input 
                         required
                         type="password"
                         className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
@@ -142,8 +142,8 @@ export function SchoolRegister() {
                     />
                 </div>
 
-                <button
-                    type="submit"
+                <button 
+                    type="submit" 
                     disabled={loading}
                     className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 mt-4"
                 >

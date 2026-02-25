@@ -38,7 +38,7 @@ export async function createBooking(booking: {
             },
             body: JSON.stringify(booking),
         });
-
+        
         return response.ok;
     } catch (error) {
         console.error("Failed to create booking:", error);

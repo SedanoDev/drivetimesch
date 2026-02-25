@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 LEFT JOIN instructors i ON b.instructor_id = i.id
                 LEFT JOIN users u ON b.student_id = u.id
                 WHERE b.tenant_id = ?";
-
+        
         $params = [$user['tenant_id']];
 
         // Filter by Date
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $sql .= " AND b.instructor_id = ?";
             $params[] = $_GET['instructor_id'];
         }
-
+        
         // Instructor Role Filter (My Bookings)
         if ($user['role'] === 'instructor') {
              // Find instructor ID for this user
@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 2. Check Availability
         $checkStmt = $pdo->prepare("SELECT id FROM bookings WHERE instructor_id = ? AND booking_date = ? AND start_time = ? AND status != 'cancelled'");
         $checkStmt->execute([$input['instructor_id'], $input['booking_date'], $input['start_time']]);
-
+        
         if ($checkStmt->rowCount() > 0) {
             http_response_code(409);
             echo json_encode(['error' => 'Slot already booked']);
@@ -126,11 +126,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 3. Create Booking
         $stmt = $pdo->prepare("INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?)");
         $duration = isset($input['duration_minutes']) ? $input['duration_minutes'] : 60;
-
+        
         $success = $stmt->execute([
             $user['tenant_id'],
             $input['instructor_id'],
-            $user['sub'],
+            $user['sub'], 
             $user['name'],
             $input['booking_date'],
             $input['start_time'],
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($success) {
             http_response_code(201);
             echo json_encode(['message' => 'Booking created successfully']);
-
+            
             // Send Notification (Mock)
             // Need student email - fetch from DB or token? Token has sub=id.
             $stuStmt = $pdo->prepare("SELECT email FROM users WHERE id = ?");
@@ -200,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
                      exit;
                 }
             }
-
+            
             $stmt = $pdo->prepare("UPDATE bookings SET status = ? WHERE id = ?");
             $stmt->execute([$input['status'], $input['id']]);
         }
@@ -243,7 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     try {
         $stmt = $pdo->prepare("DELETE FROM bookings WHERE id = ? AND tenant_id = ?");
         $stmt->execute([$_GET['id'], $user['tenant_id']]);
-
+        
         http_response_code(200);
         echo json_encode(['message' => 'Booking deleted']);
     } catch (\PDOException $e) {

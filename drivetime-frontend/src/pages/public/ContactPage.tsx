@@ -25,17 +25,17 @@ export function ContactPage() {
             </p>
 
             <div className="space-y-6">
-              <ContactItem
+              <ContactItem 
                 icon={<Mail className="w-6 h-6 text-blue-600" />}
                 title="Email"
                 detail="soporte@drivetime.com"
               />
-              <ContactItem
+              <ContactItem 
                 icon={<Phone className="w-6 h-6 text-green-600" />}
                 title="Teléfono"
                 detail="+34 91 123 45 67"
               />
-              <ContactItem
+              <ContactItem 
                 icon={<MapPin className="w-6 h-6 text-red-500" />}
                 title="Oficinas"
                 detail="Calle Gran Vía 22, Madrid"
@@ -45,7 +45,7 @@ export function ContactPage() {
 
           <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2"></div>
-
+            
             <h2 className="text-2xl font-bold mb-6 text-slate-800 relative z-10">Envíanos un mensaje</h2>
             <form className="space-y-4 relative z-10">
               <div className="grid md:grid-cols-2 gap-4">
@@ -58,7 +58,7 @@ export function ContactPage() {
                   <input type="email" className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="juan@email.com" />
                 </div>
               </div>
-
+              
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Mensaje</label>
                 <textarea rows={4} className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none" placeholder="¿Cómo podemos ayudarte?"></textarea>
@@ -71,7 +71,7 @@ export function ContactPage() {
           </div>
         </div>
       </main>
-
+      
       <footer className="bg-slate-900 text-slate-400 py-12 text-center">
         <p>&copy; {new Date().getFullYear()} DriveTime SaaS.</p>
       </footer>

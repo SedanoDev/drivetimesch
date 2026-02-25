@@ -18,7 +18,7 @@ export function StudentMyClasses() {
   const { token } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-
+  
   // Review State
   const [showReview, setShowReview] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
@@ -41,12 +41,12 @@ export function StudentMyClasses() {
 
   const handleCancel = async (id: string) => {
       if (!confirm('¿Seguro que quieres cancelar?')) return;
-
+      
       const res = await fetch(`${API_URL}/bookings.php`, {
           method: 'PUT',
-          headers: {
+          headers: { 
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}` 
           },
           body: JSON.stringify({ id, status: 'cancelled' })
       });
@@ -60,9 +60,9 @@ export function StudentMyClasses() {
       try {
           const res = await fetch(`${API_URL}/reviews.php`, {
               method: 'POST',
-              headers: {
+              headers: { 
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
+                  'Authorization': `Bearer ${token}` 
               },
               body: JSON.stringify({ ...review, booking_id: selectedBooking })
           });
@@ -97,7 +97,7 @@ export function StudentMyClasses() {
             <form onSubmit={handleReview} className="space-y-4">
                 <div className="flex justify-center gap-2 mb-4">
                     {[1, 2, 3, 4, 5].map(star => (
-                        <button
+                        <button 
                             key={star}
                             type="button"
                             onClick={() => setReview({...review, rating: star})}
@@ -109,7 +109,7 @@ export function StudentMyClasses() {
                 </div>
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Comentario (Opcional)</label>
-                    <textarea
+                    <textarea 
                         className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                         rows={3}
                         value={review.comment}
@@ -140,15 +140,15 @@ export function StudentMyClasses() {
 
                         <div className="flex items-center gap-4">
                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border
-                                ${booking.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-100' :
+                                ${booking.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-100' : 
                                   booking.status === 'completed' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                  booking.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-100' :
+                                  booking.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-100' : 
                                   'bg-orange-50 text-orange-700 border-orange-100'}`}>
                                 {booking.status === 'completed' ? 'Completada' : booking.status === 'confirmed' ? 'Confirmada' : booking.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
                             </span>
 
                             {booking.status === 'confirmed' || booking.status === 'pending' ? (
-                                <button
+                                <button 
                                     onClick={() => handleCancel(booking.id)}
                                     className="flex items-center gap-2 text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors text-sm font-bold"
                                 >
@@ -157,7 +157,7 @@ export function StudentMyClasses() {
                             ) : null}
 
                             {booking.status === 'completed' && !booking.has_review && (
-                                <button
+                                <button 
                                     onClick={() => openReviewModal(booking.id)}
                                     className="flex items-center gap-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 px-4 py-2 rounded-lg transition-colors text-sm font-bold border border-yellow-200"
                                 >

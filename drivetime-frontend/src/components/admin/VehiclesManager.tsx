@@ -40,9 +40,9 @@ export function VehiclesManager() {
       try {
           const res = await fetch(`${API_URL}/vehicles.php`, {
               method: 'POST',
-              headers: {
+              headers: { 
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
+                  'Authorization': `Bearer ${token}` 
               },
               body: JSON.stringify(newVehicle)
           });

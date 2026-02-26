@@ -19,7 +19,6 @@ $user = null;
 if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
     $token = $matches[1];
     $decoded = JWT::decode($token, $jwt_secret_key);
-    // JWT::decode returns associative array (json_decode(..., true))
     if (is_array($decoded)) {
         $user = $decoded;
     } elseif (is_object($decoded)) {
@@ -36,7 +35,16 @@ if (!$user || ($user['role'] !== 'admin' && $user['role'] !== 'superadmin')) {
 // --- GET: List Users ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
-        $stmt = $pdo->prepare("SELECT id, email, full_name, role, created_at FROM users WHERE tenant_id = ? ORDER BY role, full_name");
+        // Exclude SuperAdmin unless the requester IS a SuperAdmin
+        $sql = "SELECT id, email, full_name, role, created_at FROM users WHERE tenant_id = ?";
+
+        if ($user['role'] !== 'superadmin') {
+            $sql .= " AND role != 'superadmin'";
+        }
+
+        $sql .= " ORDER BY role, full_name";
+
+        $stmt = $pdo->prepare($sql);
         $stmt->execute([$user['tenant_id']]);
         echo json_encode($stmt->fetchAll());
     } catch (\PDOException $e) {

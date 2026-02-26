@@ -35,16 +35,12 @@ export function StudentBookingPage() {
     });
   }, []);
 
-  // Fetch Monthly Availability (Green Dots) when Instructor Selected
+  // Fetch Monthly Availability (Green Dots) when Instructor Selected or Month Changes
+  const [viewDate, setViewDate] = useState(new Date());
+
   useEffect(() => {
       if (selectedInstructorId && token) {
-          // Fetch current month availability
-          // In a real app, this should re-fetch when month changes in Calendar component
-          // For simplicity, fetching current month + next month could work, or just let Calendar trigger it?
-          // Since Calendar is dumb, we fetch current month here.
-          // TODO: Improve to fetch based on Calendar's visible month.
-          const today = new Date();
-          fetch(`${API_URL}/availability.php?mode=month&instructorId=${selectedInstructorId}&month=${today.getMonth()+1}&year=${today.getFullYear()}`, {
+          fetch(`${API_URL}/availability.php?mode=month&instructorId=${selectedInstructorId}&month=${viewDate.getMonth()+1}&year=${viewDate.getFullYear()}`, {
               headers: { 'Authorization': `Bearer ${token}` }
           })
           .then(res => res.json())
@@ -55,7 +51,7 @@ export function StudentBookingPage() {
       } else {
           setAvailableDates([]);
       }
-  }, [selectedInstructorId, token]);
+  }, [selectedInstructorId, viewDate, token]);
 
   // Fetch Time Slots when Date Selected
   useEffect(() => {
@@ -171,6 +167,7 @@ export function StudentBookingPage() {
                         selectedDate={selectedDate}
                         onSelectDate={handleDateSelect}
                         availableDates={availableDates}
+                        onMonthChange={setViewDate}
                     />
                  </div>
             </div>

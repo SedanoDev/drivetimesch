@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/auth/jwt_helper.php';
 
 if (!isset($jwt_secret_key)) { http_response_code(500); exit; }

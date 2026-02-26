@@ -115,8 +115,19 @@ Para que la aplicación funcione correctamente (especialmente las rutas de React
     <VirtualHost *:80>
         ServerName tu-dominio.com
         ServerAdmin webmaster@localhost
-        
-        # 1. Servir el Frontend compilado como raíz
+
+        # 1. Configurar el Backend en /api (PRIMERO para evitar conflictos con React)
+        Alias /api /var/www/html/drivetime/drivetime-backend/api
+
+        <Directory /var/www/html/drivetime/drivetime-backend/api>
+            Options Indexes FollowSymLinks
+            AllowOverride All
+            Require all granted
+            # Asegurar que no se apliquen las reglas de reescritura del frontend aquí
+            RewriteEngine Off
+        </Directory>
+
+        # 2. Servir el Frontend compilado como raíz
         DocumentRoot /var/www/html/drivetime/drivetime-frontend/dist
 
         <Directory /var/www/html/drivetime/drivetime-frontend/dist>
@@ -126,18 +137,10 @@ Para que la aplicación funcione correctamente (especialmente las rutas de React
             
             # Redirigir todas las rutas a index.html (necesario para React Router)
             RewriteEngine On
+            RewriteCond %{REQUEST_URI} !^/api
             RewriteCond %{REQUEST_FILENAME} !-f
             RewriteCond %{REQUEST_FILENAME} !-d
             RewriteRule ^ index.html [QSA,L]
-        </Directory>
-
-        # 2. Configurar el Backend en /api
-        Alias /api /var/www/html/drivetime/drivetime-backend/api
-
-        <Directory /var/www/html/drivetime/drivetime-backend/api>
-            Options Indexes FollowSymLinks
-            AllowOverride All
-            Require all granted
         </Directory>
 
         ErrorLog ${APACHE_LOG_DIR}/drivetime_error.log

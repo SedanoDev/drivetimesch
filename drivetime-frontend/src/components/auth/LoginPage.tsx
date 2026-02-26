@@ -15,11 +15,20 @@ export function LoginPage() {
 
   useEffect(() => {
       if (slug) {
-          // Fetch tenant info
-          fetch(`${API_URL}/public/tenants.php?slug=${slug}`)
-            .then(res => {
-                if (!res.ok) throw new Error('Network response was not ok');
-                return res.json();
+          const url = `${API_URL}/public/tenants.php?slug=${slug}`;
+          console.log("Fetching tenant from:", url); // Debug
+
+          fetch(url)
+            .then(async res => {
+                const text = await res.text();
+                try {
+                    const data = JSON.parse(text);
+                    if (!res.ok) throw new Error(data.error || 'Network error');
+                    return data;
+                } catch (e) {
+                    console.error("Invalid JSON response from:", url, "\nContent:", text.substring(0, 500));
+                    throw new Error('Respuesta inválida del servidor (HTML/404)');
+                }
             })
             .then(data => {
                 if (data.name) setTenantName(data.name);
@@ -38,20 +47,22 @@ export function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch(`${API_URL}/auth/login.php`, {
+      const url = `${API_URL}/auth/login.php`;
+      console.log("Attempting login at:", url); // Debug
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, slug }), // Send slug to backend to validate tenant context
+        body: JSON.stringify({ email, password, slug }),
       });
 
-      // Handle non-JSON responses (e.g., PHP errors, 404 HTML)
       const text = await response.text();
       let data;
       try {
           data = JSON.parse(text);
       } catch (e) {
-          console.error("Invalid JSON response:", text);
-          setError(`Server Error: ${response.status} ${response.statusText}`);
+          console.error("Invalid JSON response from:", url, "\nContent:", text.substring(0, 500));
+          setError(`Server Error: ${response.status} ${response.statusText} - Check console`);
           return;
       }
 

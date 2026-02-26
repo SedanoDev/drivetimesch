@@ -193,6 +193,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $month = $_GET['month'] ?? date('m');
         $year = $_GET['year'] ?? date('Y');
 
+        // If instructorId is missing, try to infer from logged-in user if they are an instructor
+        if (!$instructorId && $user['role'] === 'instructor') {
+             $instStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
+             $instStmt->execute([$user['sub']]);
+             $instructorId = $instStmt->fetchColumn();
+        }
+
         if (!$instructorId) { echo json_encode([]); exit; }
 
         try {

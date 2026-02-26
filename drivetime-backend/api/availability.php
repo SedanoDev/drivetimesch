@@ -1,22 +1,23 @@
 <?php
+// api/availability.php
+header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/auth/jwt_helper.php';
 
-// Disable display errors
+// Disable display errors to prevent JSON corruption
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// Auth Middleware
 if (!isset($jwt_secret_key)) { http_response_code(500); exit; }
 $headers = getallheaders();
 $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
 $user = null;
 
 if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-    $token = $matches[1];
-    $decoded = JWT::decode($token, $jwt_secret_key);
-    if (is_array($decoded)) $user = $decoded;
-    elseif (is_object($decoded)) $user = (array)$decoded;
+    try {
+        $decoded = JWT::decode($matches[1], $jwt_secret_key);
+        $user = (array)$decoded;
+    } catch (Exception $e) { }
 }
 
 if (!$user) {
@@ -25,100 +26,132 @@ if (!$user) {
     exit;
 }
 
-// --- HELPER: Get effective schedule for a date ---
+// Helper: Get effective schedule for a date
 function getEffectiveSchedule($pdo, $instructorId, $date) {
     // 1. Check Specific Date Override
-    $stmtSpec = $pdo->prepare("SELECT start_time, end_time, is_active FROM instructor_schedules WHERE instructor_id = ? AND schedule_date = ?");
-    $stmtSpec->execute([$instructorId, $date]);
-    $specific = $stmtSpec->fetch();
+    try {
+        $stmtSpec = $pdo->prepare("SELECT start_time, end_time, is_active FROM instructor_schedules WHERE instructor_id = ? AND schedule_date = ?");
+        $stmtSpec->execute([$instructorId, $date]);
+        $specific = $stmtSpec->fetch(PDO::FETCH_ASSOC);
 
-    if ($specific) {
-        return $specific; // Can be is_active=0 (Blocked)
+        if ($specific) {
+            return $specific;
+        }
+
+        // 2. Fallback to Weekly Template
+        $dow = date('w', strtotime($date));
+        // Convert PHP Sunday (0) to potential DB mismatch if DB uses 1-7? No, usually 0-6 or 1-7.
+        // Assuming 0=Sunday, 1=Monday... let's match DB constraint.
+        // In schema: day_of_week TINYINT CHECK (0-6)
+
+        $stmtAvail = $pdo->prepare("SELECT start_time, end_time, is_active FROM availabilities WHERE instructor_id = ? AND day_of_week = ?");
+        $stmtAvail->execute([$instructorId, $dow]);
+        $weekly = $stmtAvail->fetch(PDO::FETCH_ASSOC);
+
+        if ($weekly) {
+            return $weekly;
+        }
+    } catch (Exception $e) {
+        return null;
     }
-
-    // 2. Fallback to Weekly Template
-    $dow = date('w', strtotime($date));
-    $stmtAvail = $pdo->prepare("SELECT start_time, end_time, is_active FROM availabilities WHERE instructor_id = ? AND day_of_week = ?");
-    $stmtAvail->execute([$instructorId, $dow]);
-    $weekly = $stmtAvail->fetch();
-
-    if ($weekly) {
-        return $weekly;
-    }
-
-    // 3. Default: Not available
     return null;
 }
 
-// --- POST: Save Availability (Merged Logic) ---
+// --- POST: Save Availability ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if ($user['role'] !== 'instructor') { http_response_code(403); exit; }
+    if ($user['role'] !== 'instructor') { http_response_code(403); echo json_encode(['error'=>'Role']); exit; }
 
     $input = json_decode(file_get_contents('php://input'), true);
-    $mode = $_GET['mode'] ?? 'default'; // 'default' (weekly) or 'date' (specific)
+    $mode = $_GET['mode'] ?? 'default';
 
     try {
-        $pdo->beginTransaction();
-
-        // Ensure table exists (Lazy Migration)
-        $pdo->exec("CREATE TABLE IF NOT EXISTS instructor_schedules (
-            id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-            tenant_id VARCHAR(36) NOT NULL,
-            instructor_id VARCHAR(36) NOT NULL,
-            schedule_date DATE NOT NULL,
-            start_time TIME NOT NULL,
-            end_time TIME NOT NULL,
-            is_active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-            FOREIGN KEY (instructor_id) REFERENCES instructors(id) ON DELETE CASCADE,
-            UNIQUE KEY idx_instr_date (instructor_id, schedule_date)
-        )");
-
         // Get Instructor ID
         $instStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
         $instStmt->execute([$user['sub']]);
         $instructorId = $instStmt->fetchColumn();
-        if (!$instructorId) throw new Exception("Instructor profile not found");
+
+        if (!$instructorId) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Instructor profile not found']);
+            exit;
+        }
+
+        $pdo->beginTransaction();
 
         if ($mode === 'date') {
-            // Save specific date(s)
-            // Expect: { date: '2025-02-26', start: '09:00', end: '18:00', active: true }
-            if (empty($input['date'])) throw new Exception("Date required");
+            // Validate
+            if (empty($input['date'])) throw new Exception("Date is required");
 
-            $stmt = $pdo->prepare("REPLACE INTO instructor_schedules (id, tenant_id, instructor_id, schedule_date, start_time, end_time, is_active) VALUES (UUID(), ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([
-                $user['tenant_id'],
-                $instructorId,
-                $input['date'],
-                $input['start'] ?? '09:00',
-                $input['end'] ?? '18:00',
-                $input['active'] ? 1 : 0
-            ]);
-        } else {
-            // Save weekly template (Legacy/Default)
-            // Expect: [{ day: 1, start: '09:00', end: '18:00', active: true }, ...]
+            // Upsert Override
+            // Check if exists
+            $check = $pdo->prepare("SELECT id FROM instructor_schedules WHERE instructor_id = ? AND schedule_date = ?");
+            $check->execute([$instructorId, $input['date']]);
+            $exists = $check->fetchColumn();
+
+            if ($exists) {
+                $sql = "UPDATE instructor_schedules SET start_time = ?, end_time = ?, is_active = ? WHERE id = ?";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    $input['start'] ?? '09:00',
+                    $input['end'] ?? '18:00',
+                    $input['active'] ? 1 : 0,
+                    $exists
+                ]);
+            } else {
+                // Using UUID()
+                $sql = "INSERT INTO instructor_schedules (id, tenant_id, instructor_id, schedule_date, start_time, end_time, is_active) VALUES (UUID(), ?, ?, ?, ?, ?, ?)";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    $user['tenant_id'],
+                    $instructorId,
+                    $input['date'],
+                    $input['start'] ?? '09:00',
+                    $input['end'] ?? '18:00',
+                    $input['active'] ? 1 : 0
+                ]);
+            }
+
+            echo json_encode(['message' => 'Date overridden successfully']);
+
+        } elseif ($mode === 'weekly') {
+            // Save Weekly Template (Full Replacement)
+            // Expect: input = [ { day: 1, start: '09:00', end: '18:00', active: true }, ... ]
+
+            // 1. Delete existing template
             $delStmt = $pdo->prepare("DELETE FROM availabilities WHERE instructor_id = ?");
             $delStmt->execute([$instructorId]);
 
+            // 2. Insert new slots
             $insStmt = $pdo->prepare("INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time, is_active) VALUES (UUID(), ?, ?, ?, ?, ?, ?)");
 
-            foreach ($input as $slot) {
-                if ($slot['active']) {
-                    $insStmt->execute([
-                        $user['tenant_id'],
-                        $instructorId,
-                        $slot['day'],
-                        $slot['start'],
-                        $slot['end'],
-                        1
-                    ]);
+            if (is_array($input)) {
+                foreach ($input as $slot) {
+                    if (isset($slot['day'])) {
+                        $isActive = isset($slot['active']) ? (bool)$slot['active'] : true;
+                        // Only insert if active? Or insert as inactive? Schema defaults active=true.
+                        // Let's insert only active slots for simplicity, or insert all with is_active flag.
+                        // If frontend sends inactive days, we can either skip or insert with is_active=0.
+                        // Best practice: insert active ones.
+
+                        if ($isActive) {
+                            $insStmt->execute([
+                                $user['tenant_id'],
+                                $instructorId,
+                                $slot['day'],
+                                $slot['start'] ?? '09:00',
+                                $slot['end'] ?? '18:00',
+                                1
+                            ]);
+                        }
+                    }
                 }
             }
+            echo json_encode(['message' => 'Weekly template updated']);
+        } else {
+            throw new Exception("Invalid mode");
         }
 
         $pdo->commit();
-        echo json_encode(['message' => 'Availability saved']);
 
     } catch (\Exception $e) {
         $pdo->rollBack();
@@ -131,13 +164,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // --- GET: Fetch Availability ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-    // Mode: Config (Get specific date details + weekly defaults)
+    // 1. Details for a specific date (Instructor Editor)
     if (isset($_GET['mode']) && $_GET['mode'] === 'details') {
         $date = $_GET['date'] ?? date('Y-m-d');
-        // Check specific first
-        // ... logic to return what is currently active for this date (inherited or override)
-        // For editor UI: return both if override exists?
-        // Let's return the effective schedule for this date
 
         $instStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
         $instStmt->execute([$user['sub']]);
@@ -148,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // Also fetch the specific row to know if it's an override
         $stmtSpec = $pdo->prepare("SELECT * FROM instructor_schedules WHERE instructor_id = ? AND schedule_date = ?");
         $stmtSpec->execute([$instructorId, $date]);
-        $override = $stmtSpec->fetch();
+        $override = $stmtSpec->fetch(PDO::FETCH_ASSOC);
 
         echo json_encode([
             'effective' => $schedule,
@@ -158,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // Mode: Month (Get available days for calendar - Student & Instructor View)
+    // 2. Monthly Dots (Student/Instructor Calendar)
     if (isset($_GET['mode']) && $_GET['mode'] === 'month') {
         $instructorId = $_GET['instructorId'] ?? null;
         $month = $_GET['month'] ?? date('m');
@@ -172,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmtAvail->execute([$instructorId]);
             $weeklyDays = $stmtAvail->fetchAll(PDO::FETCH_COLUMN);
 
-            // Get Specific Overrides for this month
+            // Get Specific Overrides
             $startMonth = "$year-$month-01";
             $endMonth = date('Y-m-t', strtotime($startMonth));
 
@@ -211,7 +240,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // Mode: Slots (Student viewing slots for date)
+    // 3. Weekly Template (for Editor)
+    if (isset($_GET['mode']) && $_GET['mode'] === 'weekly') {
+        $instructorId = $_GET['instructorId'] ?? null;
+        // If not passed, try to infer from user
+        if (!$instructorId && $user['role'] === 'instructor') {
+             $instStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
+             $instStmt->execute([$user['sub']]);
+             $instructorId = $instStmt->fetchColumn();
+        }
+
+        if (!$instructorId) { echo json_encode([]); exit; }
+
+        try {
+            $stmt = $pdo->prepare("SELECT day_of_week as day, start_time as start, end_time as end, is_active FROM availabilities WHERE instructor_id = ? ORDER BY day_of_week ASC");
+            $stmt->execute([$instructorId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Normalize
+            $template = [];
+            for ($i=0; $i<=6; $i++) {
+                $found = false;
+                foreach ($rows as $row) {
+                    if ((int)$row['day'] === $i) {
+                        $template[] = [
+                            'day' => $i,
+                            'start' => substr($row['start'], 0, 5),
+                            'end' => substr($row['end'], 0, 5),
+                            'active' => (bool)$row['is_active']
+                        ];
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                     $template[] = [
+                        'day' => $i,
+                        'start' => '09:00',
+                        'end' => '18:00',
+                        'active' => false
+                    ];
+                }
+            }
+            echo json_encode($template);
+        } catch (\PDOException $e) {
+             http_response_code(500);
+             echo json_encode(['error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    // 4. Slots (Student View)
     $instructorId = $_GET['instructorId'] ?? null;
     $date = $_GET['date'] ?? null;
 
@@ -224,20 +303,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
         $schedule = getEffectiveSchedule($pdo, $instructorId, $date);
 
+        // Check if day is active
         if (!$schedule || !$schedule['is_active']) {
             echo json_encode([]);
             exit;
         }
 
         $slots = [];
-        // Ensure times are clean (H:i:s or H:i)
         $startStr = $schedule['start_time'];
         $endStr = $schedule['end_time'];
 
         $startTs = strtotime("$date $startStr");
         $endTs = strtotime("$date $endStr");
 
-        // Validate timestamp generation
         if (!$startTs || !$endTs || $startTs >= $endTs) {
              echo json_encode([]);
              exit;
@@ -247,10 +325,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $stmtBooked->execute([$instructorId, $date]);
         $bookedTimes = $stmtBooked->fetchAll(PDO::FETCH_COLUMN);
 
+        // Normalize DB times to H:i:00 for comparison
         $bookedTimes = array_map(function($t) { return date('H:i:00', strtotime($t)); }, $bookedTimes);
 
         while ($startTs < $endTs) {
-            // Check if 60 min class fits
+            // Check if 60 min class fits (Assuming 60 min classes fixed for now)
             if (strtotime('+60 minutes', $startTs) > $endTs) break;
 
             $timeStr = date('H:i', $startTs);

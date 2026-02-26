@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Clock, Save, Info } from 'lucide-react';
+import { Clock, Save, Info, Settings } from 'lucide-react';
 import { Calendar } from '../../components/booking/calendar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Modal } from '../../components/ui/Modal';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+interface WeeklySlot {
+    day: number;
+    start: string;
+    end: string;
+    active: boolean;
+}
 
 export function InstructorAvailability() {
   const { user, token } = useAuth();
@@ -15,8 +23,12 @@ export function InstructorAvailability() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showWeeklyModal, setShowWeeklyModal] = useState(false);
 
-  // Edit Form State
+  // Weekly Template State
+  const [weeklyTemplate, setWeeklyTemplate] = useState<WeeklySlot[]>([]);
+
+  // Edit Form State (Single Day)
   const [dayConfig, setDayConfig] = useState({
       start: '09:00',
       end: '18:00',
@@ -105,11 +117,70 @@ export function InstructorAvailability() {
       }
   };
 
+  // Weekly Template Logic
+  const openWeeklyModal = () => {
+      setShowWeeklyModal(true);
+      // Fetch current template
+      fetch(`${API_URL}/availability.php?mode=weekly&instructorId=${user?.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+              setWeeklyTemplate(data);
+          } else {
+              // Initialize default if empty
+              const defaults = Array.from({ length: 7 }, (_, i) => ({
+                  day: i,
+                  start: '09:00',
+                  end: '18:00',
+                  active: i >= 1 && i <= 5 // Mon-Fri default
+              }));
+              setWeeklyTemplate(defaults);
+          }
+      });
+  };
+
+  const handleSaveWeekly = async () => {
+      const res = await fetch(`${API_URL}/availability.php?mode=weekly`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(weeklyTemplate)
+      });
+
+      if (res.ok) {
+          setShowWeeklyModal(false);
+          fetchMonthAvailability(); // Refresh calendar
+          alert("Plantilla semanal actualizada.");
+      } else {
+          alert("Error al guardar plantilla.");
+      }
+  };
+
+  const updateWeeklySlot = (day: number, field: keyof WeeklySlot, value: any) => {
+      setWeeklyTemplate(prev => prev.map(slot =>
+          slot.day === day ? { ...slot, [field]: value } : slot
+      ));
+  };
+
+  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
   return (
     <div className="max-w-6xl mx-auto h-[calc(100vh-100px)] flex flex-col">
-        <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-800">Gestión de Disponibilidad</h1>
-            <p className="text-slate-500 text-sm">Selecciona un día en el calendario para editar su horario específico.</p>
+        <div className="mb-6 flex justify-between items-end">
+            <div>
+                <h1 className="text-2xl font-bold text-slate-800">Gestión de Disponibilidad</h1>
+                <p className="text-slate-500 text-sm">Selecciona un día en el calendario para editar su horario específico.</p>
+            </div>
+            <button
+                onClick={openWeeklyModal}
+                className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-bold hover:bg-slate-200 transition-colors flex items-center gap-2 text-sm"
+            >
+                <Settings size={16} /> Editar Plantilla Semanal
+            </button>
         </div>
 
         <div className="grid lg:grid-cols-12 gap-8 flex-1 min-h-0">
@@ -216,6 +287,54 @@ export function InstructorAvailability() {
                 )}
             </div>
         </div>
+
+        {/* Weekly Template Modal */}
+        {showWeeklyModal && (
+            <Modal isOpen={showWeeklyModal} onClose={() => setShowWeeklyModal(false)} title="Plantilla Semanal">
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <p className="text-sm text-slate-500 mb-4">Define tu horario base. Los días marcados en azul son laborables.</p>
+                    {weeklyTemplate.map(slot => (
+                        <div key={slot.day} className={`flex items-center gap-4 p-3 rounded-xl border ${slot.active ? 'bg-white border-slate-200' : 'bg-slate-50 border-transparent opacity-75'}`}>
+                            <div className="w-24 font-bold text-slate-700">{dayNames[slot.day]}</div>
+
+                            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                <input
+                                    type="checkbox"
+                                    checked={slot.active}
+                                    onChange={e => updateWeeklySlot(slot.day, 'active', e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+
+                            {slot.active ? (
+                                <div className="flex items-center gap-2 flex-1">
+                                    <input
+                                        type="time"
+                                        value={slot.start}
+                                        onChange={e => updateWeeklySlot(slot.day, 'start', e.target.value)}
+                                        className="p-2 border border-slate-200 rounded-lg text-sm w-full"
+                                    />
+                                    <span className="text-slate-400">-</span>
+                                    <input
+                                        type="time"
+                                        value={slot.end}
+                                        onChange={e => updateWeeklySlot(slot.day, 'end', e.target.value)}
+                                        className="p-2 border border-slate-200 rounded-lg text-sm w-full"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex-1 text-sm text-slate-400 italic text-center">Cerrado</div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button onClick={() => setShowWeeklyModal(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-bold">Cancelar</button>
+                    <button onClick={handleSaveWeekly} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700">Guardar Plantilla</button>
+                </div>
+            </Modal>
+        )}
     </div>
   );
 }

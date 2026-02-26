@@ -184,6 +184,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             exit;
         }
 
+        // Authorization Check for Instructors
+        if ($user['role'] === 'instructor') {
+            // Find instructor ID for this user
+            $instIdStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
+            $instIdStmt->execute([$user['sub']]);
+            $instructorId = $instIdStmt->fetchColumn();
+
+            if (!$instructorId || $booking['instructor_id'] !== $instructorId) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Unauthorized: You can only modify your own bookings']);
+                exit;
+            }
+        }
+
         // --- Status Update ---
         if (isset($input['status'])) {
             $allowed_statuses = ['confirmed', 'cancelled', 'pending', 'completed'];

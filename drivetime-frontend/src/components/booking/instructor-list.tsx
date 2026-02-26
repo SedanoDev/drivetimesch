@@ -15,12 +15,12 @@ export function InstructorList({ instructors, selectedInstructorId, onSelectInst
         <span className="text-xl text-orange-500">👨‍🏫</span>
         <h3 className="font-bold text-slate-800 text-lg">Selecciona profesor</h3>
       </div>
-      
+
       <div className="space-y-3">
         {instructors.map((instructor) => {
              // Mock availability: Javier Ruiz is unavailable for demo purposes
              const isAvailable = !instructor.name.includes("Javier");
-             
+
              return (
               <InstructorCard
                 key={instructor.id}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Car, Plus, Trash2 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface Vehicle {
     id: string;
@@ -40,9 +40,9 @@ export function VehiclesManager() {
       try {
           const res = await fetch(`${API_URL}/vehicles.php`, {
               method: 'POST',
-              headers: { 
+              headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}` 
+                  'Authorization': `Bearer ${token}`
               },
               body: JSON.stringify(newVehicle)
           });

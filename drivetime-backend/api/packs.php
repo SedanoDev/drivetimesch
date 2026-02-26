@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/auth/jwt_helper.php';
 
 // Disable display errors to prevent JSON corruption

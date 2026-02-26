@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface Instructor {
   id: string;
@@ -52,7 +52,7 @@ export function InstructorsManager() {
                    )}
                </div>
             </div>
-            
+
             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button className="text-slate-400 hover:text-blue-600 text-xs font-medium px-2 py-1">
                     Editar

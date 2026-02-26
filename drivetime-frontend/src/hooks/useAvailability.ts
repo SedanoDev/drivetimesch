@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export function useAvailability(instructorId: string | null, date: Date | null) {
   const { token } = useAuth();

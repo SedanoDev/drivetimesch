@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) UNIQUE NOT NULL, -- Para urls: autoescuela-madrid.drivetime.com
-    
+
     -- Configuración extendida
     primary_color VARCHAR(7) DEFAULT '#2563EB',
     secondary_color VARCHAR(7) DEFAULT '#1E40AF',
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     contact_phone VARCHAR(50),
     contact_address TEXT,
     social_links JSON, -- Facebook, Instagram, Twitter
-    
+
     -- Reglas de negocio
     class_duration_minutes INT DEFAULT 60,
     class_price DECIMAL(10, 2) DEFAULT 30.00,
@@ -152,7 +152,7 @@ CREATE INDEX idx_bookings_date ON bookings(booking_date);
 
 -- 1. Create a Tenant
 SET @tenant_id = UUID();
-INSERT INTO tenants (id, name, slug, contact_email, class_price, welcome_message) 
+INSERT INTO tenants (id, name, slug, contact_email, class_price, welcome_message)
 VALUES (@tenant_id, 'Autoescuela Demo', 'demo', 'info@demo.com', 35.00, '¡Bienvenido a Autoescuela Demo! Estamos aquí para ayudarte a obtener tu carnet.');
 
 -- 2. Create Users (Password: '123456' hashed with PASSWORD_DEFAULT)
@@ -184,17 +184,17 @@ INSERT INTO instructors (id, tenant_id, user_id, vehicle_id, name, bio, vehicle_
 
 -- 5. Set Availability for Instructors (Mon-Fri, 9am-6pm)
 -- Carlos (Manual) works Mon, Wed, Fri
-INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time) 
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
 SELECT UUID(), @tenant_id, id, 1, '09:00:00', '18:00:00' FROM instructors WHERE name = 'Carlos Martinez'; -- Mon
-INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time) 
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
 SELECT UUID(), @tenant_id, id, 3, '09:00:00', '18:00:00' FROM instructors WHERE name = 'Carlos Martinez'; -- Wed
-INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time) 
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
 SELECT UUID(), @tenant_id, id, 5, '09:00:00', '14:00:00' FROM instructors WHERE name = 'Carlos Martinez'; -- Fri (Half day)
 
 -- Ana (Automatic) works Tue, Thu
-INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time) 
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
 SELECT UUID(), @tenant_id, id, 2, '10:00:00', '19:00:00' FROM instructors WHERE name = 'Ana Lopez'; -- Tue
-INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time) 
+INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time)
 SELECT UUID(), @tenant_id, id, 4, '10:00:00', '19:00:00' FROM instructors WHERE name = 'Ana Lopez'; -- Thu
 
 -- 6. Class Packs

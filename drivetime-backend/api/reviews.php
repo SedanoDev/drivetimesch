@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/auth/jwt_helper.php';
 
 if (!isset($jwt_secret_key)) { http_response_code(500); exit; }
@@ -22,7 +22,7 @@ if (!$user) {
 // POST: Create Review
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
-    
+
     if (!isset($input['booking_id'], $input['rating'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Missing fields']);
@@ -63,8 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 3. Update Instructor Stats
         $stmtStats = $pdo->prepare("
-            UPDATE instructors 
-            SET 
+            UPDATE instructors
+            SET
                 rating = (SELECT AVG(rating) FROM reviews WHERE instructor_id = ?),
                 reviews_count = (SELECT COUNT(*) FROM reviews WHERE instructor_id = ?)
             WHERE id = ?

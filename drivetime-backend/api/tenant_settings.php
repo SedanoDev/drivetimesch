@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/auth/jwt_helper.php';
 
 if (!isset($jwt_secret_key)) { http_response_code(500); exit; }
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // PUT Update Settings
 if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $input = json_decode(file_get_contents('php://input'), true);
-    
+
     if (empty($input['name'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Name required']);
@@ -43,10 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     }
 
     try {
-        $sql = "UPDATE tenants SET 
-            name = ?, 
-            contact_email = ?, 
-            contact_phone = ?, 
+        $sql = "UPDATE tenants SET
+            name = ?,
+            contact_email = ?,
+            contact_phone = ?,
             contact_address = ?,
             primary_color = ?,
             secondary_color = ?,
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             min_practice_hours_required = ?,
             welcome_message = ?
             WHERE id = ?";
-            
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $input['name'],
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             $input['welcome_message'] ?? '',
             $user['tenant_id']
         ]);
-        
+
         http_response_code(200);
         echo json_encode(['message' => 'Settings updated']);
     } catch (\PDOException $e) {

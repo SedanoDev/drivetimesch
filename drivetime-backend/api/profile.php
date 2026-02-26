@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/auth/jwt_helper.php';
 
 // Auth Middleware
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $stmt = $pdo->prepare("SELECT email, full_name, created_at, role FROM users WHERE id = ?");
         $stmt->execute([$user['sub']]);
         $profile = $stmt->fetch();
-        
+
         // Don't send password hash
         echo json_encode($profile);
     } catch (\PDOException $e) {
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // --- PUT Profile ---
 if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     $input = json_decode(file_get_contents('php://input'), true);
-    
+
     // Only allow name and password changes
     $fullName = $input['full_name'] ?? null;
     $password = $input['password'] ?? null;
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
              $stmtInst = $pdo->prepare("UPDATE instructors SET name = ? WHERE user_id = ?");
              $stmtInst->execute([$fullName, $user['sub']]);
         }
-        
+
         http_response_code(200);
         echo json_encode(['message' => 'Profile updated']);
     } catch (\PDOException $e) {

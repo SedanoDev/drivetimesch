@@ -5,7 +5,7 @@ import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Modal } from '../../components/ui/Modal';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface Booking {
     id: string;
@@ -22,7 +22,7 @@ export function InstructorDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
-  
+
   // Modal State
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [notes, setNotes] = useState('');
@@ -54,7 +54,7 @@ export function InstructorDashboard() {
 
   const updateBooking = async (status?: string) => {
       if (!selectedBooking) return;
-      
+
       const payload: any = { id: selectedBooking.id };
       if (status) payload.status = status;
       if (notes !== selectedBooking.notes) payload.notes = notes;
@@ -62,9 +62,9 @@ export function InstructorDashboard() {
       try {
           const res = await fetch(`${API_URL}/bookings.php`, {
               method: 'PUT',
-              headers: { 
+              headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}` 
+                  'Authorization': `Bearer ${token}`
               },
               body: JSON.stringify(payload)
           });
@@ -107,13 +107,13 @@ export function InstructorDashboard() {
                     </div>
                 ))}
             </div>
-            
+
             <div className="grid grid-cols-5 divide-x divide-slate-100 min-h-[400px]">
                 {weekDays.map(day => {
-                    const dayBookings = bookings.filter(b => 
+                    const dayBookings = bookings.filter(b =>
                         b.booking_date === format(day, 'yyyy-MM-dd') && b.status !== 'cancelled'
                     );
-                    
+
                     return (
                         <div key={day.toISOString()} className="p-2 space-y-2">
                             {dayBookings.map(b => (
@@ -121,8 +121,8 @@ export function InstructorDashboard() {
                                     key={b.id}
                                     onClick={() => handleBookingClick(b)}
                                     className={`w-full text-left p-3 rounded-xl border text-sm transition-all hover:shadow-md
-                                        ${b.status === 'completed' 
-                                            ? 'bg-slate-50 border-slate-200 opacity-75' 
+                                        ${b.status === 'completed'
+                                            ? 'bg-slate-50 border-slate-200 opacity-75'
                                             : 'bg-white border-blue-100 shadow-sm border-l-4 border-l-blue-500'}`}
                                 >
                                     <div className="font-bold text-slate-800 mb-1">{b.start_time.substring(0,5)}</div>
@@ -161,7 +161,7 @@ export function InstructorDashboard() {
 
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Notas del Instructor</label>
-                        <textarea 
+                        <textarea
                             className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                             rows={4}
                             value={notes}
@@ -171,15 +171,15 @@ export function InstructorDashboard() {
                     </div>
 
                     <div className="flex flex-col gap-3">
-                        <button 
+                        <button
                             onClick={() => updateBooking()}
                             className="flex items-center justify-center gap-2 w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors"
                         >
                             <Save size={18} /> Guardar Notas
                         </button>
-                        
+
                         {selectedBooking.status !== 'completed' && (
-                            <button 
+                            <button
                                 onClick={() => updateBooking('completed')}
                                 className="flex items-center justify-center gap-2 w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-lg shadow-green-200"
                             >

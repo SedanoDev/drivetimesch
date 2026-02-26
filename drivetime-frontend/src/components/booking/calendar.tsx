@@ -10,9 +10,19 @@ interface CalendarProps {
   className?: string;
   availableDates?: string[]; // Array of 'YYYY-MM-DD'
   onMonthChange?: (date: Date) => void;
+  disablePast?: boolean; // New prop to control past date disabling
+  disableUnavailable?: boolean; // New prop to control whether non-available dates are disabled
 }
 
-export function Calendar({ selectedDate, onSelectDate, className, availableDates = [], onMonthChange }: CalendarProps) {
+export function Calendar({
+  selectedDate,
+  onSelectDate,
+  className,
+  availableDates = [],
+  onMonthChange,
+  disablePast = true,
+  disableUnavailable = true
+}: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const firstDayOfMonth = startOfMonth(currentMonth);
@@ -69,10 +79,16 @@ export function Calendar({ selectedDate, onSelectDate, className, availableDates
           const isAvailable = availableDates.includes(dateStr);
           const isPast = day < new Date(new Date().setHours(0,0,0,0));
 
-          // Disable if past or not available (if availableDates is provided)
-          // If availableDates is empty, maybe we assume not loaded yet or none?
-          // Let's assume if availableDates provided, strictly follow it.
-          const isDisabled = !isCurrentMonth || isPast || (availableDates.length > 0 && !isAvailable);
+          // Calculate isDisabled based on props
+          let isDisabled = !isCurrentMonth; // Always disable days from other months in this view
+
+          if (disablePast && isPast) {
+              isDisabled = true;
+          }
+
+          if (disableUnavailable && availableDates.length > 0 && !isAvailable) {
+              isDisabled = true;
+          }
 
           return (
             <button

@@ -1,62 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Clock, Check, Calendar as CalendarIcon } from 'lucide-react';
+import { Clock, Save, Info } from 'lucide-react';
 import { Calendar } from '../../components/booking/calendar';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-interface DaySchedule {
-    day: number;
-    name: string;
-    start: string;
-    end: string;
-    active: boolean;
-}
-
-const DEFAULT_SCHEDULE: DaySchedule[] = [
-    { day: 1, name: 'Lunes', start: '09:00', end: '18:00', active: true },
-    { day: 2, name: 'Martes', start: '09:00', end: '18:00', active: true },
-    { day: 3, name: 'Miércoles', start: '09:00', end: '18:00', active: true },
-    { day: 4, name: 'Jueves', start: '09:00', end: '18:00', active: true },
-    { day: 5, name: 'Viernes', start: '09:00', end: '14:00', active: true },
-];
-
 export function InstructorAvailability() {
   const { user, token } = useAuth();
-  const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_SCHEDULE);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
 
-  // Preview State
-  const [previewDate, setPreviewDate] = useState<Date | null>(null);
+  // State
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [availableDates, setAvailableDates] = useState<string[]>([]);
-  const [viewDate, setViewDate] = useState(new Date());
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (token) {
-        fetch(`${API_URL}/availability.php?mode=config`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-                const newSchedule = DEFAULT_SCHEDULE.map(day => {
-                    const found = data.find((d: any) => d.day === day.day);
-                    return found ? { ...day, start: found.start, end: found.end, active: !!found.active } : day;
-                });
-                setSchedule(newSchedule);
-            }
-        })
-        .catch(err => console.error("Error fetching availability:", err))
-        .finally(() => setLoading(false));
-    }
-  }, [token]);
+  // Edit Form State
+  const [dayConfig, setDayConfig] = useState({
+      start: '09:00',
+      end: '18:00',
+      active: true,
+      isOverride: false
+  });
 
-  // Fetch Preview Dots
-  useEffect(() => {
+  // Fetch Monthly Availability (Green Dots)
+  const fetchMonthAvailability = () => {
       if (user?.id && token) {
-          fetch(`${API_URL}/availability.php?mode=month&instructorId=${user.id}&month=${viewDate.getMonth()+1}&year=${viewDate.getFullYear()}`, {
+          fetch(`${API_URL}/availability.php?mode=month&instructorId=${user.id}&month=${selectedDate.getMonth()+1}&year=${selectedDate.getFullYear()}`, {
               headers: { 'Authorization': `Bearer ${token}` }
           })
           .then(res => res.json())
@@ -65,143 +36,184 @@ export function InstructorAvailability() {
           })
           .catch(console.error);
       }
-  }, [viewDate, user, token, schedule]); // Refetch when schedule changes locally (saved)
+  };
 
-  const handleSave = async () => {
+  useEffect(() => {
+      fetchMonthAvailability();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate.getMonth(), user, token]);
+
+  // Fetch Details for Selected Date
+  useEffect(() => {
+      if (token && selectedDate) {
+          const dateStr = format(selectedDate, 'yyyy-MM-dd');
+          setLoading(true);
+          fetch(`${API_URL}/availability.php?mode=details&date=${dateStr}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(data => {
+              if (data.effective) {
+                  setDayConfig({
+                      start: data.effective.start_time.substring(0,5),
+                      end: data.effective.end_time.substring(0,5),
+                      active: !!data.effective.is_active,
+                      isOverride: data.is_override
+                  });
+              } else {
+                  // No schedule found (default off)
+                  setDayConfig({
+                      start: '09:00',
+                      end: '18:00',
+                      active: false,
+                      isOverride: false
+                  });
+              }
+          })
+          .finally(() => setLoading(false));
+      }
+  }, [selectedDate, token]);
+
+  const handleSaveDate = async () => {
       setSaving(true);
-      setMessage('');
-
       try {
-          const res = await fetch(`${API_URL}/availability.php`, {
+          const res = await fetch(`${API_URL}/availability.php?mode=date`, {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${token}`
               },
-              body: JSON.stringify(schedule.map(s => ({
-                  day: s.day,
-                  start: s.start,
-                  end: s.end,
-                  active: s.active
-              })))
+              body: JSON.stringify({
+                  date: format(selectedDate, 'yyyy-MM-dd'),
+                  start: dayConfig.start,
+                  end: dayConfig.end,
+                  active: dayConfig.active
+              })
           });
 
           if (res.ok) {
-              setMessage('Horario guardado correctamente.');
-              // Trigger preview update
-              setViewDate(new Date(viewDate));
-              setTimeout(() => setMessage(''), 3000);
+              fetchMonthAvailability(); // Refresh dots
+              setDayConfig(prev => ({ ...prev, isOverride: true })); // It is now an override
+              alert("Guardado para este día.");
           } else {
-              setMessage('Error al guardar.');
+              alert("Error al guardar.");
           }
       } catch (err) {
-          setMessage('Error de conexión.');
+          alert("Error de conexión.");
       } finally {
           setSaving(false);
       }
   };
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Cargando disponibilidad...</div>;
-
   return (
-    <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-            <div>
-                <h1 className="text-2xl font-bold text-slate-800">Mi Horario Semanal</h1>
-                <p className="text-slate-500 text-sm mt-1">Configura tu plantilla semanal. Los cambios afectarán a futuras fechas.</p>
-            </div>
-            <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200"
-            >
-                {saving ? 'Guardando...' : <><Check size={18} /> Guardar Cambios</>}
-            </button>
+    <div className="max-w-6xl mx-auto h-[calc(100vh-100px)] flex flex-col">
+        <div className="mb-6">
+            <h1 className="text-2xl font-bold text-slate-800">Gestión de Disponibilidad</h1>
+            <p className="text-slate-500 text-sm">Selecciona un día en el calendario para editar su horario específico.</p>
         </div>
 
-        {message && (
-            <div className={`mb-6 p-4 rounded-xl text-sm font-bold ${message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                {message}
+        <div className="grid lg:grid-cols-12 gap-8 flex-1 min-h-0">
+            {/* Left: Calendar */}
+            <div className="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col items-center">
+                <Calendar
+                    selectedDate={selectedDate}
+                    onSelectDate={setSelectedDate}
+                    availableDates={availableDates}
+                    onMonthChange={(d) => setSelectedDate(d)} // Trigger refetch on nav
+                    className="border-0 shadow-none w-full"
+                />
+                <div className="mt-6 flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-slate-600">Disponible</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 border border-slate-300 rounded-full"></div>
+                        <span className="text-slate-400">No disponible</span>
+                    </div>
+                </div>
             </div>
-        )}
 
-        <div className="grid lg:grid-cols-2 gap-8">
-            {/* Configuration Form */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-                <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                    <Clock className="text-blue-500" /> Plantilla Semanal
-                </h3>
-                <div className="space-y-6">
-                    {schedule.map((day, idx) => (
-                        <div key={day.day} className={`group flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border transition-all ${day.active ? 'border-blue-100 bg-blue-50/30' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
-                            <div className="flex items-center gap-4 min-w-[120px]">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${day.active ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
-                                    {day.name.substring(0, 1)}
-                                </div>
-                                <span className={`font-bold text-sm ${day.active ? 'text-slate-800' : 'text-slate-400'}`}>{day.name}</span>
-                            </div>
+            {/* Right: Editor */}
+            <div className="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-800 capitalize">
+                            {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
+                        </h2>
+                        <div className="flex items-center gap-2 mt-1">
+                            {dayConfig.isOverride ? (
+                                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">
+                                    Horario Personalizado
+                                </span>
+                            ) : (
+                                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">
+                                    Usa Plantilla Semanal
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
+                        <Clock size={24} />
+                    </div>
+                </div>
 
-                            <div className="flex-1 flex items-center gap-2">
-                                <input
-                                    type="time"
-                                    value={day.start}
-                                    disabled={!day.active}
-                                    onChange={(e) => {
-                                        const newSched = [...schedule];
-                                        newSched[idx].start = e.target.value;
-                                        setSchedule(newSched);
-                                    }}
-                                    className="w-full p-2 rounded-lg border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:bg-slate-100"
-                                />
-                                <span className="text-slate-300">-</span>
-                                <input
-                                    type="time"
-                                    value={day.end}
-                                    disabled={!day.active}
-                                    onChange={(e) => {
-                                        const newSched = [...schedule];
-                                        newSched[idx].end = e.target.value;
-                                        setSchedule(newSched);
-                                    }}
-                                    className="w-full p-2 rounded-lg border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:bg-slate-100"
-                                />
-                            </div>
-
-                            <label className="flex items-center gap-2 cursor-pointer relative">
+                {loading ? (
+                    <div className="py-12 text-center text-slate-400">Cargando horario...</div>
+                ) : (
+                    <div className="space-y-8">
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                            <span className="font-medium text-slate-700">Estado del día</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    checked={day.active}
-                                    onChange={() => {
-                                        const newSched = [...schedule];
-                                        newSched[idx].active = !newSched[idx].active;
-                                        setSchedule(newSched);
-                                    }}
+                                    checked={dayConfig.active}
+                                    onChange={e => setDayConfig({...dayConfig, active: e.target.checked})}
                                     className="sr-only peer"
                                 />
-                                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                <span className="ml-3 text-sm font-medium text-slate-900">
+                                    {dayConfig.active ? 'Abierto' : 'Cerrado'}
+                                </span>
                             </label>
                         </div>
-                    ))}
-                </div>
-            </div>
 
-            {/* Preview Calendar */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-                <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                    <CalendarIcon className="text-green-500" /> Vista Previa (Alumno)
-                </h3>
-                <div className="flex justify-center">
-                    <Calendar
-                        selectedDate={previewDate}
-                        onSelectDate={setPreviewDate}
-                        availableDates={availableDates}
-                        onMonthChange={setViewDate}
-                        className="border-0 shadow-none"
-                    />
-                </div>
-                <div className="text-center text-sm text-slate-400 mt-4">
-                    <p>Los días con punto verde son visibles para los alumnos.</p>
-                </div>
+                        <div className={`grid grid-cols-2 gap-6 transition-opacity ${!dayConfig.active ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Apertura</label>
+                                <input
+                                    type="time"
+                                    value={dayConfig.start}
+                                    onChange={e => setDayConfig({...dayConfig, start: e.target.value})}
+                                    className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Cierre</label>
+                                <input
+                                    type="time"
+                                    value={dayConfig.end}
+                                    onChange={e => setDayConfig({...dayConfig, end: e.target.value})}
+                                    className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="pt-6 border-t border-slate-50">
+                            <button
+                                onClick={handleSaveDate}
+                                disabled={saving}
+                                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2"
+                            >
+                                {saving ? 'Guardando...' : <><Save size={20} /> Guardar Horario para este Día</>}
+                            </button>
+                            <p className="text-center text-xs text-slate-400 mt-3 flex items-center justify-center gap-1">
+                                <Info size={12} />
+                                Esto creará una excepción para esta fecha específica.
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     </div>

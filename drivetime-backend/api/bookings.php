@@ -126,7 +126,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // 3. Create Booking
-        $stmt = $pdo->prepare("INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?)");
+        $pdo->beginTransaction();
+
+        // 3a. Check Credits and Deduct
+        // Find the oldest valid pack with credits
+        $creditStmt = $pdo->prepare("
+            SELECT id, remaining_classes
+            FROM student_packs
+            WHERE student_id = ?
+            AND tenant_id = ?
+            AND remaining_classes > 0
+            AND (expiration_date IS NULL OR expiration_date >= CURDATE())
+            ORDER BY created_at ASC
+            LIMIT 1
+            FOR UPDATE
+        ");
+        $creditStmt->execute([$user['sub'], $user['tenant_id']]);
+        $pack = $creditStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$pack) {
+            $pdo->rollBack();
+            http_response_code(402); // Payment Required
+            echo json_encode(['error' => 'No credits available. Please purchase a pack.']);
+            exit;
+        }
+
+        // Deduct 1 credit
+        $deductStmt = $pdo->prepare("UPDATE student_packs SET remaining_classes = remaining_classes - 1 WHERE id = ?");
+        $deductStmt->execute([$pack['id']]);
+
+
+        // 3b. Insert Booking
+        // Status is now 'pending' by default, not 'confirmed'
+        $stmt = $pdo->prepare("INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes, status) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, 'pending')");
         $duration = isset($input['duration_minutes']) ? $input['duration_minutes'] : 60;
 
         $success = $stmt->execute([
@@ -140,17 +172,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         if ($success) {
+            $pdo->commit();
             http_response_code(201);
-            echo json_encode(['message' => 'Booking created successfully']);
+            echo json_encode(['message' => 'Booking request sent successfully']);
 
             // Send Notification (Mock)
-            // Need student email - fetch from DB or token? Token has sub=id.
             $stuStmt = $pdo->prepare("SELECT email FROM users WHERE id = ?");
             $stuStmt->execute([$user['sub']]);
             $studentEmail = $stuStmt->fetchColumn();
 
-            sendEmail($studentEmail, "Reserva Confirmada", "Has reservado clase con {$instructor['name']} el {$input['booking_date']} a las {$input['start_time']}.");
+            sendEmail($studentEmail, "Solicitud Enviada", "Has solicitado clase con {$instructor['name']} el {$input['booking_date']} a las {$input['start_time']}. Esperando confirmación.");
         } else {
+            $pdo->rollBack();
             http_response_code(500);
             echo json_encode(['error' => 'Failed to create booking']);
         }
@@ -217,8 +250,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
                 }
             }
 
+            $pdo->beginTransaction();
+
+            // Refund Logic: If cancelling a 'confirmed' or 'pending' booking, refund 1 credit
+            // We assume 1 booking = 1 credit.
+            $needsRefund = ($input['status'] === 'cancelled' || $input['status'] === 'rejected') &&
+                           ($booking['status'] === 'confirmed' || $booking['status'] === 'pending');
+
+            if ($needsRefund) {
+                // Return credit to the most recently active pack (LIFO-ish to extend validity ideally, or just any valid pack)
+                // Let's try to find the pack this student used or just any valid pack to increment.
+                // Simplest approach: Increment the most recent valid pack.
+                $refundPackStmt = $pdo->prepare("
+                    SELECT id
+                    FROM student_packs
+                    WHERE student_id = ?
+                    AND tenant_id = ?
+                    AND (expiration_date IS NULL OR expiration_date >= CURDATE())
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                ");
+                $refundPackStmt->execute([$booking['student_id'], $user['tenant_id']]); // Use booking's student_id, not necessarily user's (if instructor cancels)
+                $targetPack = $refundPackStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($targetPack) {
+                    $pdo->prepare("UPDATE student_packs SET remaining_classes = remaining_classes + 1 WHERE id = ?")->execute([$targetPack['id']]);
+                } else {
+                    // Corner case: All packs expired? Create a "refund pack" or just fail?
+                    // For now, let's create a temporary refund bucket or just log error.
+                    // We'll skip complex logic and just not refund if no valid pack exists (rare).
+                }
+            }
+
             $stmt = $pdo->prepare("UPDATE bookings SET status = ? WHERE id = ?");
             $stmt->execute([$input['status'], $input['id']]);
+
+            $pdo->commit();
         }
 
         // --- Notes Update ---

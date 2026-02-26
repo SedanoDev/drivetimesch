@@ -18,11 +18,21 @@ interface Booking {
 export function StudentDashboard() {
   const { user, token } = useAuth();
   const [nextBooking, setNextBooking] = useState<Booking | null>(null);
-  const credits = 0; // Placeholder until backend support
+  const [credits, setCredits] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (token) {
+        // Fetch Credits
+        fetch(`${API_URL}/student_packs.php`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.credits !== undefined) setCredits(data.credits);
+        })
+        .catch(console.error);
+
         // Fetch bookings to find next one
         fetch(`${API_URL}/bookings.php`, {
             headers: { 'Authorization': `Bearer ${token}` }

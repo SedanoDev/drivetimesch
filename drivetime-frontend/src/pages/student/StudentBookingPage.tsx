@@ -8,12 +8,14 @@ import { BookingSummaryFooter } from '../../components/booking/booking-summary-f
 import { ConfirmationView } from '../../components/booking/confirmation-view';
 import { fetchInstructors, createBooking } from '../../services/api';
 import type { Instructor, TimeSlot } from '../../types';
+import { Link } from 'react-router-dom';
+import { CheckCircle, AlertTriangle } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export function StudentBookingPage() {
   const { token } = useAuth();
-  const [view, setView] = useState<'selection' | 'confirmation'>('selection');
+  const [view, setView] = useState<'selection' | 'confirmation' | 'success'>('selection');
 
   // Selection States
   const [instructors, setInstructors] = useState<Instructor[]>([]);
@@ -23,17 +25,29 @@ export function StudentBookingPage() {
   const [availableDates, setAvailableDates] = useState<string[]>([]); // New state for monthly dots
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null); // Null means loading
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch Instructors on Load
+  // Fetch Instructors & Credits on Load
   useEffect(() => {
     fetchInstructors().then(data => {
         if (data && data.length > 0) {
             setInstructors(data);
         }
     });
-  }, []);
+
+    if (token) {
+        fetch(`${API_URL}/student_packs.php`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.credits !== undefined) setCredits(data.credits);
+        })
+        .catch(console.error);
+    }
+  }, [token]);
 
   // Fetch Monthly Availability (Green Dots) when Instructor Selected or Month Changes
   const [viewDate, setViewDate] = useState(new Date());
@@ -117,14 +131,10 @@ export function StudentBookingPage() {
       });
 
       if (success) {
-        alert("¡Reserva confirmada!");
-        // Reset
-        setView('selection');
-        setSelectedInstructorId(null);
-        setSelectedDate(null);
-        setSelectedTime(null);
+        setView('success');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-         alert("Error al reservar");
+         alert("Error al reservar. Verifica que tengas créditos disponibles.");
       }
       setIsSubmitting(false);
     }
@@ -138,6 +148,46 @@ export function StudentBookingPage() {
       time: time,
       available: true
   }));
+
+  if (view === 'success') {
+      return (
+          <div className="max-w-xl mx-auto py-12 px-4 text-center">
+              <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle size={48} className="text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Solicitud Enviada!</h2>
+              <p className="text-slate-600 mb-8">
+                  Tu reserva ha sido registrada y está pendiente de confirmación por parte del instructor. Te notificaremos cuando sea aceptada.
+              </p>
+              <div className="flex flex-col gap-3">
+                  <Link to="/student/classes" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-colors">
+                      Ver Mis Clases
+                  </Link>
+                  <Link to="/student" className="w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors">
+                      Volver al Inicio
+                  </Link>
+              </div>
+          </div>
+      );
+  }
+
+  // Check credits before rendering normal flow
+  if (credits === 0) {
+      return (
+          <div className="max-w-xl mx-auto py-12 px-4 text-center">
+              <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <AlertTriangle size={48} className="text-yellow-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Sin Créditos!</h2>
+              <p className="text-slate-600 mb-8">
+                  No tienes clases disponibles en tu saldo. Necesitas comprar un pack de clases para poder reservar.
+              </p>
+              <Link to="/student/payments" className="block w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
+                  Comprar Clases
+              </Link>
+          </div>
+      );
+  }
 
   return (
     <div className="mb-24">

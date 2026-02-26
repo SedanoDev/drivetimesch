@@ -38,14 +38,30 @@ export function StudentPayments() {
       if (!selectedPack) return;
       setProcessing(true);
 
-      // Simulate Payment Process
-      setTimeout(() => {
+      try {
+          const res = await fetch(`${API_URL}/student_packs.php`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ pack_id: selectedPack.id })
+          });
+
+          if (res.ok) {
+              const data = await res.json();
+              alert(`¡Pago realizado con éxito! Se han añadido ${data.added_credits} clases a tu cuenta.`);
+              setSelectedPack(null);
+          } else {
+              const err = await res.json();
+              alert(`Error: ${err.error || 'No se pudo completar la compra.'}`);
+          }
+      } catch (error) {
+          console.error(error);
+          alert('Error de conexión');
+      } finally {
           setProcessing(false);
-          alert(`¡Pago realizado con éxito! Se han añadido ${selectedPack.classes_count} clases a tu cuenta.`);
-          setSelectedPack(null);
-          // Here we would call an API to add credits to the user
-          // e.g. POST /api/credits { userId, packId }
-      }, 2000);
+      }
   };
 
   return (

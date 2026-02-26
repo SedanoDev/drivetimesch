@@ -1,27 +1,8 @@
+import { apiFetch } from './apiClient';
 import type { Instructor } from '../types';
 
-// Use environment variable or fallback to localhost
-const API_URL = import.meta.env.VITE_API_URL || '/api';
-
-// Helper to get token
-const getAuthHeader = (): Record<string, string> => {
-  const token = localStorage.getItem('token');
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
-};
-
 export async function fetchInstructors(): Promise<Instructor[]> {
-    try {
-        const response = await fetch(`${API_URL}/instructors.php`, {
-            headers: getAuthHeader()
-        });
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Failed to fetch instructors:", error);
-        return [];
-    }
+    return apiFetch<Instructor[]>('/instructors.php');
 }
 
 export async function createBooking(booking: {
@@ -30,18 +11,13 @@ export async function createBooking(booking: {
     start_time: string;
 }): Promise<boolean> {
     try {
-        const response = await fetch(`${API_URL}/bookings.php`, {
+        await apiFetch('/bookings.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeader()
-            },
             body: JSON.stringify(booking),
         });
-
-        return response.ok;
+        return true;
     } catch (error) {
-        console.error("Failed to create booking:", error);
+        console.error("Booking failed:", error);
         return false;
     }
 }

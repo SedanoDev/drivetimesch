@@ -1,1 +1,13 @@
-node_modules/
+# Ignore vendor directories and environment files
+/vendor/
+/.env
+/node_modules/
+.DS_Store
+
+# Ignore Composer Dependencies
+drivetime-backend/vendor/
+drivetime-backend/composer.lock
+
+# Ignore Frontend Dependencies
+drivetime-frontend/node_modules/
+drivetime-frontend/dist/

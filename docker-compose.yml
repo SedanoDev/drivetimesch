@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: drivetime
+      MYSQL_USER: drivetime_user
+      MYSQL_PASSWORD: drivetime_password
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/schema_mysql.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+
+  backend:
+    build:
+      context: ./drivetime-backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8000:80"
+    environment:
+      DB_HOST: database
+      DB_NAME: drivetime
+      DB_USER: drivetime_user
+      DB_PASS: drivetime_password
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./drivetime-backend:/var/www/html
+    depends_on:
+      - database
+
+  frontend:
+    build:
+      context: ./drivetime-frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./drivetime-frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

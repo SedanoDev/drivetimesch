@@ -136,6 +136,12 @@ export function StudentBookingPage() {
       } else {
          alert("Error al reservar. Verifica que tengas créditos disponibles.");
       }
+      // Re-fetch credits in case they changed (e.g., race condition or refresh needed)
+      if (token) {
+        fetch(`${API_URL}/student_packs.php`, { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(res => res.json())
+        .then(data => { if (data.credits !== undefined) setCredits(data.credits); });
+      }
       setIsSubmitting(false);
     }
   };

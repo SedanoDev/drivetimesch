@@ -26,7 +26,7 @@ export function PrivacyPage() {
         <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4">1. Recopilación de Información</h2>
           <p className="mb-4">
-            Recopilamos información personal que usted nos proporciona voluntariamente al registrarse, 
+            Recopilamos información personal que usted nos proporciona voluntariamente al registrarse,
             como nombre, dirección de correo electrónico y número de teléfono.
           </p>
         </section>
@@ -34,7 +34,7 @@ export function PrivacyPage() {
         <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4">2. Uso de la Información</h2>
           <p className="mb-4">
-            Utilizamos su información para proporcionar y mejorar nuestros servicios, procesar sus transacciones 
+            Utilizamos su información para proporcionar y mejorar nuestros servicios, procesar sus transacciones
             y comunicarnos con usted sobre actualizaciones o problemas técnicos.
           </p>
         </section>
@@ -42,7 +42,7 @@ export function PrivacyPage() {
         <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4">3. Compartir Información</h2>
           <p className="mb-4">
-            No vendemos ni alquilamos su información personal a terceros. Podemos compartir información con 
+            No vendemos ni alquilamos su información personal a terceros. Podemos compartir información con
             proveedores de servicios que nos ayudan a operar nuestro negocio (por ejemplo, procesamiento de pagos).
           </p>
         </section>
@@ -50,13 +50,13 @@ export function PrivacyPage() {
         <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4">4. Seguridad</h2>
           <p className="mb-4">
-            Implementamos medidas de seguridad técnicas y organizativas para proteger sus datos contra el acceso, 
+            Implementamos medidas de seguridad técnicas y organizativas para proteger sus datos contra el acceso,
             la alteración o la divulgación no autorizados.
           </p>
         </section>
 
       </main>
-      
+
       <footer className="bg-slate-900 text-slate-400 py-12 text-center">
         <p>&copy; {new Date().getFullYear()} DriveTime SaaS.</p>
       </footer>

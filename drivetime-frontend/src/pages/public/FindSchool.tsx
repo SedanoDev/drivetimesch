@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Search, ChevronRight, School, Loader2 } from 'lucide-react';
 
 // Use env var or default
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface TenantResult {
     id: string;
@@ -73,7 +73,7 @@ export function FindSchool() {
         <div className={`bg-white p-2 rounded-2xl shadow-xl border transition-all flex items-center z-20 relative ${hasSearched && results.length > 0 ? 'rounded-b-none border-blue-200 shadow-blue-100/50' : 'border-slate-100'}`}>
             <Search className={`w-6 h-6 ml-4 transition-colors ${loading ? 'text-blue-500 animate-pulse' : 'text-slate-400'}`} />
             <form onSubmit={handleManualSubmit} className="flex-1">
-                <input 
+                <input
                     className="w-full p-4 pl-3 outline-none text-lg bg-transparent text-slate-800 placeholder:text-slate-300"
                     placeholder="Ej: Autoescuela Veloz"
                     value={query}
@@ -86,7 +86,7 @@ export function FindSchool() {
                     <Loader2 className="animate-spin" />
                 </div>
             ) : (
-                <button 
+                <button
                     onClick={() => performSearch(query)}
                     className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-200"
                 >

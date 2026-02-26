@@ -34,7 +34,7 @@ export function ConfirmationView({ selectedDate, selectedTime, selectedInstructo
            <span className="text-slate-500 font-medium text-sm uppercase tracking-wide">Ubicación</span>
            <span className="text-slate-800 font-bold text-lg">Ciudad Lineal, Madrid</span>
         </div>
-        
+
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 border-dashed">
            <span className="text-slate-500 font-medium text-sm uppercase tracking-wide">Precio</span>
            <span className="text-slate-800 font-bold text-lg">25,00 €</span>
@@ -42,11 +42,11 @@ export function ConfirmationView({ selectedDate, selectedTime, selectedInstructo
 
         <div className="pt-2">
           <span className="text-slate-500 font-medium block mb-4 text-sm uppercase tracking-wide">Profesor seleccionado</span>
-          <InstructorCard 
-            instructor={selectedInstructor} 
-            isSelected={true} 
-            isAvailable={true} 
-            onSelect={() => {}} 
+          <InstructorCard
+            instructor={selectedInstructor}
+            isSelected={true}
+            isAvailable={true}
+            onSelect={() => {}}
             selectedTime={selectedTime}
           />
         </div>

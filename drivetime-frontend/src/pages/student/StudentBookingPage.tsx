@@ -9,12 +9,12 @@ import { ConfirmationView } from '../../components/booking/confirmation-view';
 import { fetchInstructors, createBooking } from '../../services/api';
 import type { Instructor, TimeSlot } from '../../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export function StudentBookingPage() {
   const { token } = useAuth();
   const [view, setView] = useState<'selection' | 'confirmation'>('selection');
-  
+
   // Selection States
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [selectedInstructorId, setSelectedInstructorId] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export function StudentBookingPage() {
     if (selectedInstructorId && selectedDate && token) {
         setIsLoadingSlots(true);
         const dateStr = selectedDate.toISOString().split('T')[0];
-        
+
         fetch(`${API_URL}/availability.php?instructorId=${selectedInstructorId}&date=${dateStr}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
@@ -70,7 +70,7 @@ export function StudentBookingPage() {
   let currentStepperStep = 1;
   if (selectedInstructorId) currentStepperStep = 2;
   if (selectedDate) currentStepperStep = 3;
-  if (selectedTime) currentStepperStep = 3; 
+  if (selectedTime) currentStepperStep = 3;
   if (view === 'confirmation') currentStepperStep = 4;
 
   const handleInstructorSelect = (id: string) => {
@@ -126,7 +126,7 @@ export function StudentBookingPage() {
   return (
     <div className="mb-24">
       <h1 className="text-2xl font-bold mb-6 text-slate-800">Nueva Reserva</h1>
-      
+
       <Stepper currentStep={currentStepperStep} />
 
       <div className="mt-8 mb-8 space-y-8">
@@ -135,7 +135,7 @@ export function StudentBookingPage() {
             {/* Step 1: Select Instructor */}
             <div>
                 <h3 className="text-lg font-bold text-slate-800 mb-4 px-4 lg:px-0">1. Selecciona Instructor</h3>
-                <InstructorList 
+                <InstructorList
                     instructors={instructors}
                     selectedInstructorId={selectedInstructorId}
                     onSelectInstructor={handleInstructorSelect}
@@ -170,12 +170,12 @@ export function StudentBookingPage() {
         )}
       </div>
 
-      <BookingSummaryFooter 
-        selectedDate={selectedDate} 
-        selectedTime={selectedTime} 
-        selectedInstructor={selectedInstructor} 
-        currentStep={currentStepperStep} 
-        onNext={handleNext} 
+      <BookingSummaryFooter
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+        selectedInstructor={selectedInstructor}
+        currentStep={currentStepperStep}
+        onNext={handleNext}
         canProceed={canProceed}
         isSubmitting={isSubmitting}
         buttonText={view === 'selection' ? 'Continuar' : 'Confirmar Reserva'}

@@ -20,8 +20,8 @@ export function LandingPage() {
             <Link to="/find-school" className="hidden md:flex items-center text-slate-600 font-medium hover:text-blue-600">
               Acceso / Login
             </Link>
-            <Link 
-              to="/register-school" 
+            <Link
+              to="/register-school"
               className="bg-blue-600 text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-blue-700 transition-all hover:shadow-lg hover:-translate-y-0.5"
             >
               Registrar Autoescuela
@@ -47,15 +47,15 @@ export function LandingPage() {
             La plataforma todo en uno para digitalizar tus reservas, gestionar instructores y ofrecer la mejor experiencia a tus alumnos.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              to="/register-school" 
+            <Link
+              to="/register-school"
               className="flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-200"
             >
               Empezar Prueba Gratis
               <ChevronRight className="w-5 h-5" />
             </Link>
-            <Link 
-              to="/login/demo" 
+            <Link
+              to="/login/demo"
               className="flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-200 px-8 py-4 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all"
             >
               Ver Demo
@@ -71,19 +71,19 @@ export function LandingPage() {
             <h2 className="text-3xl font-bold text-slate-900 mb-4">Todo lo que necesitas</h2>
             <p className="text-slate-500 max-w-2xl mx-auto">Deja atrás el papel y las hojas de cálculo. DriveTime centraliza tu negocio.</p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
-            <FeatureCard 
+            <FeatureCard
               icon={<Smartphone className="w-8 h-8 text-blue-600" />}
               title="App para Alumnos"
               desc="Tus alumnos reservan clases desde su móvil en segundos. Menos llamadas, más clases."
             />
-            <FeatureCard 
+            <FeatureCard
               icon={<Shield className="w-8 h-8 text-purple-600" />}
               title="Gestión de Instructores"
               desc="Controla horarios, asignaciones y rendimiento de tus profesores en tiempo real."
             />
-            <FeatureCard 
+            <FeatureCard
               icon={<Star className="w-8 h-8 text-orange-500" />}
               title="Pagos y Facturación"
               desc="Automatiza el cobro de clases y mantén tus cuentas claras sin esfuerzo."
@@ -101,21 +101,21 @@ export function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <PricingCard 
-              title="Básico" 
-              price="29€" 
-              features={['Hasta 50 alumnos', '1 Profesor', 'Reservas ilimitadas', 'Soporte por email']} 
+            <PricingCard
+              title="Básico"
+              price="29€"
+              features={['Hasta 50 alumnos', '1 Profesor', 'Reservas ilimitadas', 'Soporte por email']}
             />
-            <PricingCard 
-              title="Pro" 
-              price="79€" 
-              isPopular 
-              features={['Hasta 200 alumnos', '5 Profesores', 'Panel avanzado', 'Soporte prioritario', 'Personalización de marca']} 
+            <PricingCard
+              title="Pro"
+              price="79€"
+              isPopular
+              features={['Hasta 200 alumnos', '5 Profesores', 'Panel avanzado', 'Soporte prioritario', 'Personalización de marca']}
             />
-            <PricingCard 
-              title="Enterprise" 
-              price="Consultar" 
-              features={['Alumnos ilimitados', 'Profesores ilimitados', 'API Access', 'Gestor dedicado', 'Marca blanca total']} 
+            <PricingCard
+              title="Enterprise"
+              price="Consultar"
+              features={['Alumnos ilimitados', 'Profesores ilimitados', 'API Access', 'Gestor dedicado', 'Marca blanca total']}
             />
           </div>
         </div>

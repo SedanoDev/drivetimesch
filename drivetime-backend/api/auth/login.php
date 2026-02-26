@@ -26,13 +26,13 @@ if (!isset($jwt_secret_key)) {
 try {
     $email = $input['email'];
     $slug = $input['slug'] ?? null;
-    
+
     $user = null;
 
     if ($slug) {
         // If slug is provided, we must find the user within that specific tenant
         $stmt = $pdo->prepare("
-            SELECT u.id, u.tenant_id, u.password_hash, u.role, u.full_name 
+            SELECT u.id, u.tenant_id, u.password_hash, u.role, u.full_name
             FROM users u
             JOIN tenants t ON u.tenant_id = t.id
             WHERE u.email = ? AND t.slug = ?
@@ -41,7 +41,7 @@ try {
         $stmt->execute([$email, $slug]);
         $user = $stmt->fetch();
     } else {
-        // Fallback: If no slug (generic login), find the user. 
+        // Fallback: If no slug (generic login), find the user.
         // Note: If email exists in multiple tenants, this might be ambiguous.
         // For a real SaaS, we'd probably require tenant context or have a central user table.
         // Here we pick the first match.
@@ -51,7 +51,7 @@ try {
     }
 
     if ($user && password_verify($input['password'], $user['password_hash'])) {
-        
+
         // Generate Token Payload
         $payload = [
             'iat' => time(),

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface Booking {
   id: string;
@@ -29,13 +29,13 @@ export function BookingsManager() {
       try {
           const res = await fetch(`${API_URL}/bookings.php`, {
               method: 'PUT',
-              headers: { 
+              headers: {
                   'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}` 
+                  Authorization: `Bearer ${token}`
               },
               body: JSON.stringify({ id, status: newStatus })
           });
-          
+
           if (res.ok) {
               setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus as any } : b));
           }
@@ -68,15 +68,15 @@ export function BookingsManager() {
                 <td className="px-4 py-3 text-slate-500">{booking.instructor_name}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide
-                    ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' : 
-                      booking.status === 'cancelled' ? 'bg-red-100 text-red-700' : 
+                    ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                      booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
                       'bg-yellow-100 text-yellow-700'}`}>
                     {booking.status}
                   </span>
                 </td>
                 <td className="px-4 py-3 flex gap-2">
                     {booking.status !== 'cancelled' && (
-                        <button 
+                        <button
                             onClick={() => handleStatusChange(booking.id, 'cancelled')}
                             className="text-red-500 hover:text-red-700 font-medium text-xs border border-red-200 px-2 py-1 rounded hover:bg-red-50"
                         >
@@ -84,7 +84,7 @@ export function BookingsManager() {
                         </button>
                     )}
                      {booking.status === 'pending' && (
-                        <button 
+                        <button
                             onClick={() => handleStatusChange(booking.id, 'confirmed')}
                             className="text-green-500 hover:text-green-700 font-medium text-xs border border-green-200 px-2 py-1 rounded hover:bg-green-50"
                         >

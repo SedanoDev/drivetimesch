@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 try {
     $stats = [];
-    
+
     // 1. Bookings Today
     $today = date('Y-m-d');
     $stmtToday = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE tenant_id = ? AND booking_date = ?");
@@ -56,12 +56,12 @@ try {
 
     // 3. Top Instructor (Most Bookings)
     $stmtTop = $pdo->prepare("
-        SELECT i.name, COUNT(b.id) as count 
-        FROM bookings b 
-        JOIN instructors i ON b.instructor_id = i.id 
-        WHERE b.tenant_id = ? 
-        GROUP BY i.id 
-        ORDER BY count DESC 
+        SELECT i.name, COUNT(b.id) as count
+        FROM bookings b
+        JOIN instructors i ON b.instructor_id = i.id
+        WHERE b.tenant_id = ?
+        GROUP BY i.id
+        ORDER BY count DESC
         LIMIT 1
     ");
     $stmtTop->execute([$user['tenant_id']]);

@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { BookingsManager } from './BookingsManager';
 import { InstructorsManager } from './InstructorsManager';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface DashboardStats {
   bookings_today: number;

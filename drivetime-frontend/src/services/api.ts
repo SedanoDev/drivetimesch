@@ -1,7 +1,7 @@
 import type { Instructor } from '../types';
 
 // Use environment variable or fallback to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper to get token
 const getAuthHeader = (): Record<string, string> => {
@@ -38,7 +38,7 @@ export async function createBooking(booking: {
             },
             body: JSON.stringify(booking),
         });
-        
+
         return response.ok;
     } catch (error) {
         console.error("Failed to create booking:", error);

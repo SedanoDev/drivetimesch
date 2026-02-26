@@ -6,7 +6,7 @@ export function Header() {
       <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
         <span>🚗 DriveTime</span>
       </div>
-      
+
       <nav className="hidden md:flex gap-8 text-sm font-medium">
         <a href="#" className="opacity-80 hover:opacity-100 transition-opacity">Inicio</a>
         <a href="#" className="opacity-100 font-bold border-b-2 border-white pb-1">Reservar</a>

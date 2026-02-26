@@ -130,6 +130,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 3a. Check Credits and Deduct
         // Find the oldest valid pack with credits
+        // Use COALESCE for expiration to handle NULLs correctly if needed, though IS NULL OR ... handles it.
+        // Debugging: Ensure CURDATE() matches server time expectation.
         $creditStmt = $pdo->prepare("
             SELECT id, remaining_classes
             FROM student_packs
@@ -147,7 +149,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$pack) {
             $pdo->rollBack();
             http_response_code(402); // Payment Required
-            echo json_encode(['error' => 'No credits available. Please purchase a pack.']);
+
+            // Debug info (optional, remove in prod if sensitive)
+            // error_log("No credits found for user {$user['sub']} in tenant {$user['tenant_id']}");
+
+            echo json_encode(['error' => 'No tienes créditos disponibles. Por favor compra un pack.']);
             exit;
         }
 

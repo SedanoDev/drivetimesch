@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { ShoppingBag, Check, CreditCard, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Check, CreditCard, AlertCircle, CheckCircle } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
+import { Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -19,6 +20,8 @@ export function StudentPayments() {
   const [loading, setLoading] = useState(true);
   const [selectedPack, setSelectedPack] = useState<Pack | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
       if (token) {
@@ -50,8 +53,9 @@ export function StudentPayments() {
 
           if (res.ok) {
               const data = await res.json();
-              alert(`¡Pago realizado con éxito! Se han añadido ${data.added_credits} clases a tu cuenta.`);
+              setSuccessMessage(`¡Pago realizado con éxito! Se han añadido ${data.added_credits} clases a tu cuenta.`);
               setSelectedPack(null);
+              setShowSuccess(true);
           } else {
               const err = await res.json();
               alert(`Error: ${err.error || 'No se pudo completar la compra.'}`);
@@ -166,6 +170,30 @@ export function StudentPayments() {
               </div>
           </Modal>
       )}
+
+      {/* Success Modal */}
+      <Modal isOpen={showSuccess} onClose={() => setShowSuccess(false)} title="¡Compra Exitosa!">
+          <div className="text-center space-y-6">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle size={40} className="text-green-600" />
+              </div>
+              <p className="text-slate-600 text-lg">{successMessage}</p>
+              <div className="flex flex-col gap-3">
+                  <Link
+                      to="/student/book"
+                      className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 flex justify-center"
+                  >
+                      Reservar Clase Ahora
+                  </Link>
+                  <button
+                      onClick={() => setShowSuccess(false)}
+                      className="w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                  >
+                      Seguir Comprando
+                  </button>
+              </div>
+          </div>
+      </Modal>
     </div>
   );
 }

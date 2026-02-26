@@ -9,9 +9,10 @@ interface CalendarProps {
   onSelectDate: (date: Date) => void;
   className?: string;
   availableDates?: string[]; // Array of 'YYYY-MM-DD'
+  onMonthChange?: (date: Date) => void;
 }
 
-export function Calendar({ selectedDate, onSelectDate, className, availableDates = [] }: CalendarProps) {
+export function Calendar({ selectedDate, onSelectDate, className, availableDates = [], onMonthChange }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const firstDayOfMonth = startOfMonth(currentMonth);
@@ -23,8 +24,17 @@ export function Calendar({ selectedDate, onSelectDate, className, availableDates
 
   const weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const nextMonth = () => {
+      const newDate = addMonths(currentMonth, 1);
+      setCurrentMonth(newDate);
+      onMonthChange?.(newDate);
+  };
+
+  const prevMonth = () => {
+      const newDate = subMonths(currentMonth, 1);
+      setCurrentMonth(newDate);
+      onMonthChange?.(newDate);
+  };
 
   return (
     <div className={cn("bg-white p-6 rounded-2xl shadow-sm border border-slate-100 w-full max-w-md", className)}>

@@ -38,10 +38,19 @@ export function StudentPayments() {
   }, [token]);
 
   const handleBuy = async () => {
-      if (!selectedPack) return;
+      console.log('--- HANDLE BUY CLICKED ---');
+      console.log('Selected Pack:', selectedPack);
+      console.log('API URL:', API_URL);
+      console.log('Token:', token);
+
+      if (!selectedPack) {
+          alert('No hay pack seleccionado');
+          return;
+      }
       setProcessing(true);
 
       try {
+          console.log('Sending fetch request...');
           const res = await fetch(`${API_URL}/student_packs.php`, {
               method: 'POST',
               headers: {
@@ -50,6 +59,8 @@ export function StudentPayments() {
               },
               body: JSON.stringify({ pack_id: selectedPack.id })
           });
+
+          console.log('Fetch response status:', res.status);
 
           if (res.ok) {
               const data = await res.json();

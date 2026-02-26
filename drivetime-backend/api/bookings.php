@@ -130,28 +130,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 3a. Check Credits and Deduct
         // Find the oldest valid pack with credits
-        // Use COALESCE for expiration to handle NULLs correctly if needed, though IS NULL OR ... handles it.
-        // Debugging: Ensure CURDATE() matches server time expectation.
+        // Using PHP's date() instead of CURDATE() to avoid server time mismatch issues.
+        $today = date('Y-m-d');
+
         $creditStmt = $pdo->prepare("
             SELECT id, remaining_classes
             FROM student_packs
             WHERE student_id = ?
             AND tenant_id = ?
             AND remaining_classes > 0
-            AND (expiration_date IS NULL OR expiration_date >= CURDATE())
-            ORDER BY created_at ASC
+            AND (expiration_date IS NULL OR expiration_date >= ?)
+            ORDER BY created_at ASC, id ASC
             LIMIT 1
             FOR UPDATE
         ");
-        $creditStmt->execute([$user['sub'], $user['tenant_id']]);
+        $creditStmt->execute([$user['sub'], $user['tenant_id'], $today]);
         $pack = $creditStmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$pack) {
             $pdo->rollBack();
             http_response_code(402); // Payment Required
 
-            // Debug info (optional, remove in prod if sensitive)
-            // error_log("No credits found for user {$user['sub']} in tenant {$user['tenant_id']}");
+            // Log this failure to help debugging if it persists
+            error_log("Credit Failure: User={$user['sub']}, Tenant={$user['tenant_id']}, Date={$today}. No valid packs found.");
 
             echo json_encode(['error' => 'No tienes créditos disponibles. Por favor compra un pack.']);
             exit;

@@ -24,9 +24,22 @@ fi
 echo "🐳 Building Docker Containers..."
 docker-compose up --build -d
 
+echo "⏳ Waiting for Backend Service to Start..."
+sleep 5 # Give Apache a moment to start
+
 # 4. Install Backend Dependencies
-echo "📦 Installing Backend Dependencies..."
-docker-compose exec -T backend composer install --no-interaction --prefer-dist
+echo "📦 Installing Backend Dependencies (Composer)..."
+if docker-compose exec -T backend composer install --no-interaction --prefer-dist; then
+    echo "✅ Composer Dependencies Installed."
+else
+    echo "❌ Failed to install Composer dependencies! Trying again..."
+    sleep 2
+    docker-compose exec -T backend composer install --no-interaction --prefer-dist || {
+        echo "🚨 CRITICAL: Could not install backend dependencies."
+        echo "Please try running: docker-compose exec backend composer install"
+        exit 1
+    }
+fi
 
 echo "⏳ Waiting for Database to Initialize..."
 sleep 15

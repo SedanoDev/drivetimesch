@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Clock, MapPin, CheckCircle, Save, Calendar as CalendarIcon, List as ListIcon, User } from 'lucide-react';
-import { format, isSameDay, isAfter, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Modal } from '../../components/ui/Modal';
 import { Calendar } from '../../components/booking/calendar';
@@ -19,7 +19,7 @@ interface Booking {
 }
 
 export function InstructorDashboard() {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');

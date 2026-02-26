@@ -32,11 +32,13 @@ if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
 // --- GET: List Bookings (with filters) ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
+        // Optimization: Use LEFT JOIN instead of correlated subquery for reviews to prevent N+1 queries
         $sql = "SELECT b.id, b.booking_date, b.start_time, b.status, b.notes, b.student_name, i.name as instructor_name, u.email as student_email,
-                (SELECT COUNT(*) FROM reviews r WHERE r.booking_id = b.id) as has_review
+                CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END as has_review
                 FROM bookings b
                 LEFT JOIN instructors i ON b.instructor_id = i.id
                 LEFT JOIN users u ON b.student_id = u.id
+                LEFT JOIN reviews r ON b.id = r.booking_id
                 WHERE b.tenant_id = ?";
 
         $params = [$user['tenant_id']];

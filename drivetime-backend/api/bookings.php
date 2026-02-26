@@ -1,7 +1,12 @@
 <?php
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/auth/jwt_helper.php';
-require_once __DIR__ . '/utils/email.php';
+
+// Try to include email, but don't crash if missing (we'll handle it)
+$emailScript = __DIR__ . '/utils/email.php';
+if (file_exists($emailScript)) {
+    require_once $emailScript;
+}
 
 // Ensure secret key is available
 if (!isset($jwt_secret_key)) {
@@ -16,13 +21,17 @@ $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
 
 if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
     $token = $matches[1];
-    $decoded = JWT::decode($token, $jwt_secret_key);
-    if (!$decoded) {
+    try {
+        $decoded = JWT::decode($token, $jwt_secret_key);
+        if (!$decoded) {
+            throw new Exception("Invalid token structure");
+        }
+        $user = (array)$decoded;
+    } catch (Exception $e) {
         http_response_code(401);
-        echo json_encode(['error' => 'Invalid Token']);
+        echo json_encode(['error' => 'Invalid Token: ' . $e->getMessage()]);
         exit;
     }
-    $user = $decoded;
 } else {
     http_response_code(401);
     echo json_encode(['error' => 'Token required']);
@@ -86,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         echo json_encode($bookings);
 
-    } catch (\PDOException $e) {
+    } catch (\Throwable $e) {
         http_response_code(500);
         echo json_encode(['error' => $e->getMessage()]);
     }
@@ -95,15 +104,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // --- POST: Create Booking ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-
-    if (!isset($input['instructor_id'], $input['booking_date'], $input['start_time'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Missing required fields']);
-        exit;
-    }
-
+    // Wrap entire block to catch Fatal Errors
     try {
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($input['instructor_id'], $input['booking_date'], $input['start_time'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing required fields']);
+            exit;
+        }
+
         // 1. Verify Instructor belongs to Tenant
         $instStmt = $pdo->prepare("SELECT id, name FROM instructors WHERE id = ? AND tenant_id = ?");
         $instStmt->execute([$input['instructor_id'], $user['tenant_id']]);
@@ -129,8 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
 
         // 3a. Check Credits and Deduct
-        // Find the oldest valid pack with credits
-        // Using PHP's date() instead of CURDATE() to avoid server time mismatch issues.
         $today = date('Y-m-d');
 
         $creditStmt = $pdo->prepare("
@@ -151,8 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->rollBack();
             http_response_code(402); // Payment Required
 
-            // Log this failure to help debugging if it persists
-            error_log("Credit Failure: User={$user['sub']}, Tenant={$user['tenant_id']}, Date={$today}. No valid packs found.");
+            error_log("Credit Failure [402]: User={$user['sub']}, Tenant={$user['tenant_id']}, Date={$today}. No valid packs found.");
 
             echo json_encode(['error' => 'No tienes créditos disponibles. Por favor compra un pack.']);
             exit;
@@ -164,7 +171,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
         // 3b. Insert Booking
-        // Status is now 'pending' by default, not 'confirmed'
+        // Status is now 'pending' by default
+        // Manual UUID generation if needed, but assuming DB default or PHP logic elsewhere.
+        // Let's use PHP to generate UUID to be safe and consistent with other files if needed,
+        // but the previous code used UUID() SQL function which is fine if DB supports it.
+        // I'll stick to UUID() as it was working before for insertion.
         $stmt = $pdo->prepare("INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes, status) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, 'pending')");
         $duration = isset($input['duration_minutes']) ? $input['duration_minutes'] : 60;
 
@@ -180,39 +191,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($success) {
             $pdo->commit();
+
+            // Success Response first
             http_response_code(201);
             echo json_encode(['message' => 'Booking request sent successfully']);
 
-            // Send Notification (Mock)
-            $stuStmt = $pdo->prepare("SELECT email FROM users WHERE id = ?");
-            $stuStmt->execute([$user['sub']]);
-            $studentEmail = $stuStmt->fetchColumn();
+            // Send Notification (Safe Mode)
+            try {
+                if (function_exists('sendEmail')) {
+                    $stuStmt = $pdo->prepare("SELECT email FROM users WHERE id = ?");
+                    $stuStmt->execute([$user['sub']]);
+                    $studentEmail = $stuStmt->fetchColumn();
 
-            sendEmail($studentEmail, "Solicitud Enviada", "Has solicitado clase con {$instructor['name']} el {$input['booking_date']} a las {$input['start_time']}. Esperando confirmación.");
+                    if ($studentEmail) {
+                        sendEmail($studentEmail, "Solicitud Enviada", "Has solicitado clase con {$instructor['name']} el {$input['booking_date']} a las {$input['start_time']}. Esperando confirmación.");
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Log email error but don't fail the request since it's already committed
+                error_log("Email sending failed for booking: " . $e->getMessage());
+            }
+
         } else {
             $pdo->rollBack();
             http_response_code(500);
-            echo json_encode(['error' => 'Failed to create booking']);
+            echo json_encode(['error' => 'Failed to create booking database record']);
         }
 
-    } catch (\PDOException $e) {
+    } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
+        // Return JSON with error message so frontend doesn't just see "Internal Server Error" text
+        echo json_encode(['error' => 'Server Error: ' . $e->getMessage()]);
+        error_log("Booking Fatal Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
     }
     exit;
 }
 
 // --- PUT: Update Booking Status/Notes ---
 if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    $input = json_decode(file_get_contents('php://input'), true);
-
-    if (!isset($input['id'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Missing ID']);
-        exit;
-    }
-
     try {
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($input['id'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing ID']);
+            exit;
+        }
+
         $fetchSql = "SELECT * FROM bookings WHERE id = ? AND tenant_id = ?";
         $fetchStmt = $pdo->prepare($fetchSql);
         $fetchStmt->execute([$input['id'], $user['tenant_id']]);
@@ -265,27 +293,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
                            ($booking['status'] === 'confirmed' || $booking['status'] === 'pending');
 
             if ($needsRefund) {
-                // Return credit to the most recently active pack (LIFO-ish to extend validity ideally, or just any valid pack)
-                // Let's try to find the pack this student used or just any valid pack to increment.
-                // Simplest approach: Increment the most recent valid pack.
                 $refundPackStmt = $pdo->prepare("
                     SELECT id
                     FROM student_packs
                     WHERE student_id = ?
                     AND tenant_id = ?
-                    AND (expiration_date IS NULL OR expiration_date >= CURDATE())
+                    AND (expiration_date IS NULL OR expiration_date >= ?)
                     ORDER BY created_at DESC
                     LIMIT 1
                 ");
-                $refundPackStmt->execute([$booking['student_id'], $user['tenant_id']]); // Use booking's student_id, not necessarily user's (if instructor cancels)
+                $today = date('Y-m-d');
+                $refundPackStmt->execute([$booking['student_id'], $user['tenant_id'], $today]);
                 $targetPack = $refundPackStmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($targetPack) {
                     $pdo->prepare("UPDATE student_packs SET remaining_classes = remaining_classes + 1 WHERE id = ?")->execute([$targetPack['id']]);
-                } else {
-                    // Corner case: All packs expired? Create a "refund pack" or just fail?
-                    // For now, let's create a temporary refund bucket or just log error.
-                    // We'll skip complex logic and just not refund if no valid pack exists (rare).
                 }
             }
 
@@ -309,7 +331,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         http_response_code(200);
         echo json_encode(['message' => 'Booking updated']);
 
-    } catch (\PDOException $e) {
+    } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         http_response_code(500);
         echo json_encode(['error' => $e->getMessage()]);
     }
@@ -336,7 +361,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
 
         http_response_code(200);
         echo json_encode(['message' => 'Booking deleted']);
-    } catch (\PDOException $e) {
+    } catch (\Throwable $e) {
         http_response_code(500);
         echo json_encode(['error' => $e->getMessage()]);
     }

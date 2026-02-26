@@ -4,139 +4,195 @@ DriveTime es una plataforma completa para la gestión de autoescuelas, construid
 
 ## 📋 Requisitos Previos
 
-Necesitas un servidor o entorno local con la pila **LAMP** (Linux, Apache, MySQL, PHP) y **Node.js** para compilar el frontend.
+Esta guía asume que estás utilizando un servidor con **Ubuntu** (20.04 o superior) limpio.
 
-```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install apache2 mysql-server php php-mysql php-pdo nodejs npm git -y
-```
-
-Asegúrate de que el módulo `rewrite` de Apache esté activo:
-```bash
-sudo a2enmod rewrite
-sudo systemctl restart apache2
-```
+Necesitarás permisos de `sudo` para realizar la instalación.
 
 ---
 
-## 🚀 Guía de Instalación Paso a Paso
+## 🚀 Guía de Instalación Paso a Paso (Ubuntu)
 
-### 1. Clonar el Repositorio
+### 1. Actualización del Sistema e Instalación de Dependencias
 
-Recomendamos clonar el proyecto directamente en la raíz de tu servidor web (`/var/www/html`).
+Primero, actualizamos los repositorios e instalamos la pila LAMP (Linux, Apache, MySQL, PHP) junto con Node.js y las herramientas necesarias.
+
+```bash
+# 1. Actualizar el sistema
+sudo apt update && sudo apt upgrade -y
+
+# 2. Instalar Apache, MySQL, PHP y extensiones comunes
+sudo apt install apache2 mysql-server php php-mysql php-pdo php-mbstring php-xml php-curl php-zip unzip git curl -y
+
+# 3. Habilitar el módulo rewrite de Apache (Crucial para la API y React)
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+
+# 4. Instalar Node.js (Versión LTS recomendada)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# 5. Instalar pnpm (Gestor de paquetes eficiente)
+sudo npm install -g pnpm
+```
+
+### 2. Clonar el Repositorio
+
+Clonaremos el proyecto en una carpeta llamada `drivetime` dentro del directorio web.
 
 ```bash
 cd /var/www/html
-sudo git clone https://github.com/tu-usuario/drivetime.git drivetime
+# Clonamos el repositorio
+sudo git clone https://github.com/SedanoDev/drivetimesch.git drivetime
+
+# Entramos al directorio
 cd drivetime
 ```
 
-### 2. Configuración de la Base de Datos
+### 3. Configuración de la Base de Datos (MySQL)
 
-1.  Entra en MySQL:
+Configuraremos la base de datos y el usuario.
+
+1.  Accede a la consola de MySQL:
     ```bash
-    sudo mysql -u root -p
+    sudo mysql
     ```
-2.  Crea la base de datos y usuario:
+
+2.  Ejecuta los siguientes comandos SQL (cambia `'tu_password_segura'` por una contraseña real):
     ```sql
-    CREATE DATABASE drivetime;
+    -- Crear base de datos
+    CREATE DATABASE drivetime CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+    -- Crear usuario (ajusta la contraseña)
     CREATE USER 'drivetime_user'@'localhost' IDENTIFIED BY 'tu_password_segura';
+
+    -- Dar permisos
     GRANT ALL PRIVILEGES ON drivetime.* TO 'drivetime_user'@'localhost';
     FLUSH PRIVILEGES;
+
+    -- Salir
     EXIT;
     ```
-3.  Importa el esquema:
+
+3.  Importa el esquema inicial:
     ```bash
+    # Asumiendo que estás en /var/www/html/drivetime
     mysql -u drivetime_user -p drivetime < database/schema_mysql.sql
+    # (Te pedirá la contraseña que acabas de configurar)
     ```
 
-### 3. Configuración del Backend (PHP)
+### 4. Configuración del Backend (PHP)
 
-El backend necesita saber cómo conectarse a la base de datos. Por seguridad, el archivo de configuración no se incluye y debes crearlo.
+El backend necesita las credenciales para conectarse a la base de datos.
 
-1.  Ve a la carpeta del backend:
+1.  Ve al directorio del backend:
     ```bash
-    cd /var/www/html/drivetime/drivetime-backend
-    ```
-2.  Copia el ejemplo y edítalo:
-    ```bash
-    cp config.example.php config.php
-    nano config.php
-    ```
-3.  Modifica las líneas con tus datos:
-    ```php
-    $username = 'drivetime_user';
-    $password = 'tu_password_segura';
-    $jwt_secret_key = 'cambia_esto_por_una_frase_larga_y_secreta';
+    cd drivetime-backend
     ```
 
-### 4. Configuración del Frontend (React)
+2.  Crea el archivo de configuración a partir del ejemplo:
+    ```bash
+    sudo cp config.example.php config.php
+    ```
 
-El frontend necesita saber dónde está la API del backend.
+3.  Edita el archivo `config.php`:
+    ```bash
+    sudo nano config.php
+    ```
 
-1.  Ve a la carpeta del frontend:
+4.  **IMPORTANTE:** Modifica las siguientes variables con tus datos reales:
+    -   `$username`: 'drivetime_user'
+    -   `$password`: 'tu_password_segura' (la que pusiste en MySQL)
+    -   `$jwt_secret_key`: Cambia esto por una cadena larga y aleatoria para la seguridad de los tokens.
+    -   (Opcional) Revisa `$allowed_origins` si vas a usar un dominio específico.
+
+    Guarda con `Ctrl+O`, `Enter` y sal con `Ctrl+X`.
+
+### 5. Configuración del Frontend (React con pnpm)
+
+Prepararemos el frontend para producción.
+
+1.  Ve al directorio del frontend:
     ```bash
-    cd /var/www/html/drivetime/drivetime-frontend
+    cd ../drivetime-frontend
     ```
-2.  Instala las dependencias:
+
+2.  **Limpieza y Dependencias:**
+    Como vamos a usar `pnpm`, eliminaremos `package-lock.json` para evitar conflictos y luego instalaremos las dependencias.
+
     ```bash
-    npm install
+    # Eliminar lockfile de npm si existe
+    sudo rm -f package-lock.json
+
+    # Instalar dependencias con pnpm
+    sudo pnpm install
     ```
-3.  Copia el archivo de entorno y edítalo:
+
+3.  **Configurar Variables de Entorno:**
     ```bash
-    cp .env.example .env
-    nano .env
+    sudo cp .env.example .env
+    sudo nano .env
     ```
-4.  Establece la URL de tu API (Backend). Si usas el VirtualHost recomendado abajo, será:
+
+    Asegúrate de que la URL apunte a tu dominio o IP. Para la configuración estándar con Apache (ver paso 6), debe ser relativa (`/api`) o completa.
+
     ```env
-    VITE_API_URL=http://tu-dominio.com/api
-    ```
-    *(Si pruebas en local sin dominio, usa `http://localhost/drivetime-backend/api`)*
+    # Opción A (Recomendada para producción con el VirtualHost de abajo):
+    VITE_API_URL=/api
 
-5.  Compila el proyecto para producción:
+    # Opción B (Si usas dominio completo):
+    # VITE_API_URL=http://tu-dominio.com/api
+    ```
+
+4.  **Compilar el proyecto:**
     ```bash
-    npm run build
+    sudo pnpm run build
     ```
-    Esto creará una carpeta `dist/` con los archivos optimizados.
+    Esto generará una carpeta `dist/` con la aplicación optimizada.
 
-### 5. Despliegue en Apache (VirtualHost)
+### 6. Configuración de Apache (VirtualHost)
 
-Para que la aplicación funcione correctamente (especialmente las rutas de React), crearemos un VirtualHost que sirva el frontend compilado y permita acceso a la API.
+Configuraremos Apache para servir el frontend y el backend correctamente.
 
-1.  Crea el archivo de configuración:
+1.  Crea un nuevo archivo de configuración para el sitio:
     ```bash
     sudo nano /etc/apache2/sites-available/drivetime.conf
     ```
 
-2.  Pega el siguiente contenido (ajusta `ServerName` y las rutas si cambiaste la carpeta):
+2.  Pega el siguiente contenido (reemplaza `tu-dominio.com` por tu dominio real o tu IP pública):
 
     ```apache
     <VirtualHost *:80>
+        # Cambia esto por tu dominio o IP
         ServerName tu-dominio.com
-        ServerAdmin webmaster@localhost
+        # ServerAlias www.tu-dominio.com
 
-        # 1. Configurar el Backend en /api (PRIMERO para evitar conflictos con React)
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html/drivetime/drivetime-frontend/dist
+
+        # 1. Configuración del Backend (API)
+        # Es crucial definir el Alias antes de las reglas del frontend
         Alias /api /var/www/html/drivetime/drivetime-backend/api
 
         <Directory /var/www/html/drivetime/drivetime-backend/api>
             Options Indexes FollowSymLinks
             AllowOverride All
             Require all granted
-            # Asegurar que no se apliquen las reglas de reescritura del frontend aquí
+
+            # Desactivar el motor de reescritura aquí para que la API maneje sus propias rutas
+            # o para evitar que las reglas del frontend interfieran.
             RewriteEngine Off
         </Directory>
 
-        # 2. Servir el Frontend compilado como raíz
-        DocumentRoot /var/www/html/drivetime/drivetime-frontend/dist
-
+        # 2. Configuración del Frontend (React SPA)
         <Directory /var/www/html/drivetime/drivetime-frontend/dist>
             Options Indexes FollowSymLinks
             AllowOverride All
             Require all granted
 
-            # Redirigir todas las rutas a index.html (necesario para React Router)
+            # Reglas para Single Page Application (SPA)
             RewriteEngine On
+
+            # Si la petición no es a /api y el archivo no existe, servir index.html
             RewriteCond %{REQUEST_URI} !^/api
             RewriteCond %{REQUEST_FILENAME} !-f
             RewriteCond %{REQUEST_FILENAME} !-d
@@ -148,19 +204,31 @@ Para que la aplicación funcione correctamente (especialmente las rutas de React
     </VirtualHost>
     ```
 
-3.  Activa el sitio y recarga Apache:
+3.  Habilita el sitio y deshabilita el default (opcional):
     ```bash
     sudo a2ensite drivetime.conf
+    sudo a2dissite 000-default.conf # Opcional, si solo vas a tener este sitio
     sudo systemctl reload apache2
     ```
+
+### 7. Permisos Finales
+
+Asegúrate de que Apache tenga permisos sobre los archivos.
+
+```bash
+sudo chown -R www-data:www-data /var/www/html/drivetime
+sudo chmod -R 755 /var/www/html/drivetime
+```
 
 ---
 
 ## 🔑 Acceso y Demo
 
-Una vez desplegado, accede a tu dominio (ej: `http://tu-dominio.com`).
+Una vez completado, abre tu navegador y visita tu dominio o IP (ej: `http://tu-dominio.com` o `http://192.168.x.x`).
 
-Para probar la plataforma, usa estas credenciales pre-generadas:
+Deberías ver la Landing Page de DriveTime.
+
+### Credenciales por Defecto (Base de Datos Demo)
 
 | Rol | Email | Contraseña |
 | :--- | :--- | :--- |
@@ -169,4 +237,4 @@ Para probar la plataforma, usa estas credenciales pre-generadas:
 | **Instructor** | `carlos@demo.com` | `123456` |
 | **Alumno** | `alumno@demo.com` | `123456` |
 
-> **Nota:** El flujo de login comienza buscando la autoescuela. Usa el buscador para encontrar "Autoescuela Demo" o ve directamente a `/login/demo`.
+> **Nota:** Para loguearte, primero usa el buscador de escuelas ("Autoescuela Demo") o ve a `/login/demo`.

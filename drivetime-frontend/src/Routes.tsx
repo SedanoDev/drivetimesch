@@ -9,11 +9,14 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { BookingsManager } from './components/admin/BookingsManager';
 import { InstructorsManager } from './components/admin/InstructorsManager';
 import { UsersManager } from './components/admin/UsersManager';
+import { ReviewsManager } from './components/admin/ReviewsManager';
 import { TenantSettings } from './components/admin/TenantSettings';
 import { VehiclesManager } from './components/admin/VehiclesManager';
 import { PacksManager } from './components/admin/PacksManager';
+import { StudentDashboard } from './pages/student/StudentDashboard';
 import { StudentBookingPage } from './pages/student/StudentBookingPage';
 import { StudentMyClasses } from './pages/student/StudentMyClasses';
+import { StudentPayments } from './pages/student/StudentPayments';
 import { InstructorDashboard } from './pages/instructor/InstructorDashboard';
 import { InstructorAvailability } from './pages/instructor/InstructorAvailability';
 import { InstructorStudents } from './pages/instructor/InstructorStudents';
@@ -60,9 +63,10 @@ export function AppRoutes() {
 
       {/* Student Routes */}
       <Route path="/student" element={user?.role === 'student' ? <StudentLayout /> : <Navigate to="/login" />}>
-         <Route path="dashboard" element={<StudentBookingPage />} />
-         {/* Assuming Dashboard serves as Booking Page for now or make separate dashboard */}
+         <Route path="dashboard" element={<StudentDashboard />} />
+         <Route path="book" element={<StudentBookingPage />} />
          <Route path="bookings" element={<StudentMyClasses />} />
+         <Route path="payments" element={<StudentPayments />} />
          <Route path="progress" element={<div>Progreso (Próximamente)</div>} />
          <Route path="profile" element={<ProfilePage />} />
       </Route>
@@ -80,6 +84,7 @@ export function AppRoutes() {
       <Route path="/admin" element={user?.role === 'admin' || user?.role === 'superadmin' ? <AdminLayout /> : <Navigate to="/login" />}>
          <Route path="dashboard" element={<AdminDashboard />} />
          <Route path="bookings" element={<BookingsManager />} />
+         <Route path="reviews" element={<ReviewsManager />} />
          <Route path="users" element={<UsersManager />} />
          <Route path="instructors" element={<InstructorsManager />} />
          <Route path="vehicles" element={<VehiclesManager />} />

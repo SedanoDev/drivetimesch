@@ -20,6 +20,7 @@ export function StudentBookingPage() {
   const [selectedInstructorId, setSelectedInstructorId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [availableDates, setAvailableDates] = useState<string[]>([]); // New state for monthly dots
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
@@ -30,13 +31,33 @@ export function StudentBookingPage() {
     fetchInstructors().then(data => {
         if (data && data.length > 0) {
             setInstructors(data);
-            // Optional: Auto-select first instructor
-            // setSelectedInstructorId(data[0].id);
         }
     });
   }, []);
 
-  // Fetch Availability when Instructor & Date are selected
+  // Fetch Monthly Availability (Green Dots) when Instructor Selected
+  useEffect(() => {
+      if (selectedInstructorId && token) {
+          // Fetch current month availability
+          // In a real app, this should re-fetch when month changes in Calendar component
+          // For simplicity, fetching current month + next month could work, or just let Calendar trigger it?
+          // Since Calendar is dumb, we fetch current month here.
+          // TODO: Improve to fetch based on Calendar's visible month.
+          const today = new Date();
+          fetch(`${API_URL}/availability.php?mode=month&instructorId=${selectedInstructorId}&month=${today.getMonth()+1}&year=${today.getFullYear()}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(data => {
+              if (Array.isArray(data)) setAvailableDates(data);
+          })
+          .catch(console.error);
+      } else {
+          setAvailableDates([]);
+      }
+  }, [selectedInstructorId, token]);
+
+  // Fetch Time Slots when Date Selected
   useEffect(() => {
     if (selectedInstructorId && selectedDate && token) {
         setIsLoadingSlots(true);
@@ -47,7 +68,6 @@ export function StudentBookingPage() {
         })
         .then(res => res.json())
         .then(data => {
-            // API returns array of strings: ['09:00', '10:00']
             if (Array.isArray(data)) {
                 setAvailableSlots(data);
             } else {
@@ -147,7 +167,11 @@ export function StudentBookingPage() {
             <div className={`transition-all duration-500 ${selectedInstructorId ? 'opacity-100' : 'opacity-40 pointer-events-none grayscale'}`}>
                  <h3 className="text-lg font-bold text-slate-800 mb-4 px-4 lg:px-0">2. Selecciona Fecha</h3>
                  <div className="flex justify-center">
-                    <Calendar selectedDate={selectedDate} onSelectDate={handleDateSelect} />
+                    <Calendar
+                        selectedDate={selectedDate}
+                        onSelectDate={handleDateSelect}
+                        availableDates={availableDates}
+                    />
                  </div>
             </div>
 

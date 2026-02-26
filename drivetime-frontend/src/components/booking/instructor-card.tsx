@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react';
+import { Star, MessageCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { Instructor } from '../../types';
 
@@ -8,14 +8,15 @@ interface InstructorCardProps {
   isAvailable: boolean;
   onSelect: () => void;
   selectedTime: string;
+  onViewReviews: (e: React.MouseEvent) => void;
 }
 
-export function InstructorCard({ instructor, isSelected, isAvailable, onSelect, selectedTime }: InstructorCardProps) {
+export function InstructorCard({ instructor, isSelected, isAvailable, onSelect, selectedTime, onViewReviews }: InstructorCardProps) {
   return (
     <div
       onClick={() => isAvailable && onSelect()}
       className={cn(
-        "relative flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 bg-white w-full",
+        "relative flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 bg-white w-full group",
         isAvailable ? "cursor-pointer hover:border-blue-300 hover:shadow-md hover:bg-slate-50" : "opacity-60 cursor-not-allowed bg-slate-50",
         isSelected ? "border-blue-600 bg-blue-50 ring-1 ring-blue-600 shadow-md" : "border-slate-100"
       )}
@@ -44,18 +45,24 @@ export function InstructorCard({ instructor, isSelected, isAvailable, onSelect, 
           {instructor.name}
         </h4>
 
-        <p className="text-xs text-slate-500 truncate">{instructor.bio}</p>
+        {/* Removed bio as requested */}
 
         <div className="flex items-center gap-1.5 mt-1">
           <div className="flex">
             {[1, 2, 3, 4, 5].map((star) => (
               <Star
                 key={star}
-                className={cn("w-3 h-3 fill-current", star <= Math.round(instructor.rating) ? "text-yellow-400" : "text-slate-200")}
+                className={cn("w-3 h-3", star <= Math.round(Number(instructor.rating)) ? "fill-yellow-400 text-yellow-400" : "text-slate-200")}
               />
             ))}
           </div>
-          <span className="text-[10px] text-slate-400">({instructor.reviews_count} valoraciones)</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onViewReviews(e); }}
+            className="text-[10px] text-slate-400 hover:text-blue-600 hover:underline flex items-center gap-1"
+          >
+             ({instructor.reviews_count} valoraciones)
+             <MessageCircle size={10} />
+          </button>
         </div>
       </div>
 

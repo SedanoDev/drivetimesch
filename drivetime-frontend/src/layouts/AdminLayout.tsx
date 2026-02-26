@@ -1,6 +1,6 @@
 import { useAuth } from '../hooks/useAuth';
 import { Outlet, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, Settings, Car, Package } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Settings, Car, Package, Star } from 'lucide-react';
 import { SidebarLayout } from './SidebarLayout';
 
 export function AdminLayout() {
@@ -13,6 +13,7 @@ export function AdminLayout() {
   const links = [
       { to: "/admin/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
       { to: "/admin/bookings", icon: <Calendar size={20} />, label: "Reservas" },
+      { to: "/admin/reviews", icon: <Star size={20} />, label: "Reseñas" },
       { to: "/admin/users", icon: <Users size={20} />, label: "Usuarios" },
       { to: "/admin/instructors", icon: <Users size={20} />, label: "Profesores" },
       { to: "/admin/vehicles", icon: <Car size={20} />, label: "Vehículos" },

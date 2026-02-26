@@ -1,21 +1,8 @@
 import { Car, Shield, Smartphone, Calendar, UserCheck, TrendingUp } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export function FeaturesPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Car className="w-8 h-8 text-blue-600" />
-            <span className="font-bold text-xl tracking-tight">DriveTime</span>
-          </Link>
-          <div className="flex gap-4">
-             <Link to="/register-school" className="text-blue-600 font-bold hover:underline">Prueba Gratis</Link>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-7xl mx-auto px-6 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-extrabold text-slate-900 mb-4">Todas las herramientas que necesitas</h1>
@@ -57,10 +44,6 @@ export function FeaturesPage() {
           />
         </div>
       </main>
-
-      <footer className="bg-slate-900 text-slate-400 py-12 text-center">
-        <p>&copy; {new Date().getFullYear()} DriveTime SaaS.</p>
-      </footer>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Route, Routes, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './components/auth/LoginPage';
+import { PublicLayout } from './layouts/PublicLayout';
 import { StudentLayout } from './layouts/StudentLayout';
 import { InstructorLayout } from './layouts/InstructorLayout';
 import { AdminLayout } from './layouts/AdminLayout';
@@ -33,17 +34,20 @@ export function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard-redirect" replace />} />
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/dashboard-redirect" replace />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+      </Route>
+
       <Route path="/register-school" element={<SchoolRegister />} />
       <Route path="/find-school" element={<FindSchool />} />
       <Route path="/login/admin" element={<Navigate to="/find-school" replace />} />
       <Route path="/login/:slug?" element={!user ? <LoginPage /> : <Navigate to="/dashboard-redirect" replace />} />
-      <Route path="/features" element={<FeaturesPage />} />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/blog" element={<BlogPage />} />
-      <Route path="/contact" element={<ContactPage />} />
-      <Route path="/privacy" element={<PrivacyPage />} />
-      <Route path="/terms" element={<TermsPage />} />
 
       {/* Redirect Helper */}
       <Route path="/dashboard-redirect" element={

@@ -48,6 +48,7 @@ export function ConfirmationView({ selectedDate, selectedTime, selectedInstructo
             isAvailable={true}
             onSelect={() => {}}
             selectedTime={selectedTime}
+            onViewReviews={() => {}}
           />
         </div>
       </div>

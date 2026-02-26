@@ -27,7 +27,7 @@ export function SidebarLayout({ title, links, logout, colorClass = 'text-blue-60
 
             {/* Sidebar Overlay */}
             {isOpen && (
-                <div
+                <div 
                     className="fixed inset-0 bg-black/50 z-40 md:hidden animate-in fade-in"
                     onClick={() => setIsOpen(false)}
                 />
@@ -50,11 +50,11 @@ export function SidebarLayout({ title, links, logout, colorClass = 'text-blue-60
 
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                     {links.map(link => (
-                        <NavItem
-                            key={link.to}
-                            to={link.to}
-                            icon={link.icon}
-                            label={link.label}
+                        <NavItem 
+                            key={link.to} 
+                            to={link.to} 
+                            icon={link.icon} 
+                            label={link.label} 
                             onClick={() => setIsOpen(false)}
                             activeColor={colorClass}
                         />
@@ -62,8 +62,8 @@ export function SidebarLayout({ title, links, logout, colorClass = 'text-blue-60
                 </nav>
 
                 <div className="p-4 border-t border-slate-100">
-                    <button
-                        onClick={logout}
+                    <button 
+                        onClick={logout} 
                         className="flex items-center gap-3 px-4 py-3 w-full text-slate-600 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors font-medium text-sm"
                     >
                         <LogOut size={20} />
@@ -82,13 +82,13 @@ function NavItem({ to, icon, label, onClick, activeColor }: { to: string, icon: 
     const hoverTextClass = activeColor;
 
     return (
-        <NavLink
-            to={to}
+        <NavLink 
+            to={to} 
             onClick={onClick}
             className={({ isActive }) => `
                 flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm
-                ${isActive
-                    ? `${bgClass} text-white shadow-md ${shadowClass}`
+                ${isActive 
+                    ? `${bgClass} text-white shadow-md ${shadowClass}` 
                     : `text-slate-600 hover:bg-slate-50 hover:${hoverTextClass}`
                 }
             `}

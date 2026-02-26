@@ -29,7 +29,7 @@ export function TimeSlots({ slots, selectedTime, selectedDate, onSelectTime, cla
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {slots.map((slot) => {
            const isSelected = selectedTime === slot.time;
-
+           
            return (
             <button
               key={slot.time}
@@ -47,7 +47,7 @@ export function TimeSlots({ slots, selectedTime, selectedDate, onSelectTime, cla
               <span className={cn(!slot.available && "line-through decoration-2 decoration-slate-200")}>
                 {slot.time}
               </span>
-
+              
               {!slot.available && (
                 <span className="absolute -top-2.5 -right-2 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-md font-bold shadow-sm z-20 transform scale-90 tracking-wide uppercase">
                   Ocupado
@@ -57,7 +57,7 @@ export function TimeSlots({ slots, selectedTime, selectedDate, onSelectTime, cla
           );
         })}
       </div>
-
+      
       {slots.length === 0 && (
          <div className="text-center py-8 text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
             No hay horarios disponibles para esta fecha.

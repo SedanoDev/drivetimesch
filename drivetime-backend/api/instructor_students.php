@@ -36,10 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // Fetch students - FIX: Use subquery or GROUP BY to handle aggregate
         // The previous query might fail on strict SQL mode if not grouped properly
         $sql = "
-            SELECT
-                u.id,
-                u.full_name,
-                u.email,
+            SELECT 
+                u.id, 
+                u.full_name, 
+                u.email, 
                 COUNT(b.id) as total_classes,
                 MAX(b.booking_date) as last_class
             FROM bookings b
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             GROUP BY u.id, u.full_name, u.email
             ORDER BY last_class DESC
         ";
-
+        
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$instructorId]);
         echo json_encode($stmt->fetchAll());

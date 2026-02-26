@@ -20,7 +20,7 @@ export function AboutPage() {
         <div className="text-center mb-16">
           <h1 className="text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">Sobre DriveTime</h1>
           <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            Somos un equipo apasionado por la tecnología y la educación vial. Nuestra misión es
+            Somos un equipo apasionado por la tecnología y la educación vial. Nuestra misión es 
             eliminar el papel y las llamadas telefónicas de la gestión de autoescuelas.
           </p>
         </div>
@@ -29,8 +29,8 @@ export function AboutPage() {
             <div className="bg-slate-100 rounded-3xl p-12 h-full flex flex-col justify-center">
                 <h2 className="text-3xl font-bold mb-4">Nuestra Historia</h2>
                 <p className="text-lg text-slate-600 mb-6">
-                    DriveTime nació en 2024 cuando nos dimos cuenta de que reservar una clase de conducir
-                    seguía siendo tan difícil como en los años 90. Decidimos crear una plataforma
+                    DriveTime nació en 2024 cuando nos dimos cuenta de que reservar una clase de conducir 
+                    seguía siendo tan difícil como en los años 90. Decidimos crear una plataforma 
                     SaaS moderna, rápida y fiable.
                 </p>
                 <div className="flex gap-4">
@@ -45,17 +45,17 @@ export function AboutPage() {
                 </div>
             </div>
             <div className="grid gap-6">
-                <ValueCard
+                <ValueCard 
                     icon={<Heart className="text-red-500" />}
                     title="Pasión por el Cliente"
                     desc="Escuchamos a cada profesor y alumno para mejorar la app cada semana."
                 />
-                <ValueCard
+                <ValueCard 
                     icon={<Zap className="text-yellow-500" />}
                     title="Velocidad ante todo"
                     desc="Nadie quiere esperar. Nuestra infraestructura está optimizada para ser instantánea."
                 />
-                <ValueCard
+                <ValueCard 
                     icon={<Globe className="text-blue-500" />}
                     title="Global pero Local"
                     desc="Diseñado para escalar, pero adaptado a la normativa de tu ciudad."
@@ -73,7 +73,7 @@ export function AboutPage() {
             </Link>
         </div>
       </main>
-
+      
       <footer className="bg-slate-900 text-slate-400 py-12 text-center">
         <p>&copy; {new Date().getFullYear()} DriveTime SaaS.</p>
       </footer>

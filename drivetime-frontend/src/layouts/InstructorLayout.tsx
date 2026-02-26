@@ -19,10 +19,10 @@ export function InstructorLayout() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      <SidebarLayout
-        title="Instructor"
-        links={links}
-        logout={logout}
+      <SidebarLayout 
+        title="Instructor" 
+        links={links} 
+        logout={logout} 
         colorClass="text-blue-600"
       />
       <main className="flex-1 p-4 md:p-8 overflow-y-auto w-full">

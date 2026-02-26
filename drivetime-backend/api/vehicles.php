@@ -32,9 +32,9 @@ if (!$user || ($user['role'] !== 'admin' && $user['role'] !== 'superadmin')) {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
         $sql = "
-            SELECT v.*, i.name as instructor_name
-            FROM vehicles v
-            LEFT JOIN instructors i ON v.id = i.vehicle_id
+            SELECT v.*, i.name as instructor_name 
+            FROM vehicles v 
+            LEFT JOIN instructors i ON v.id = i.vehicle_id 
             WHERE v.tenant_id = ?
         ";
         $stmt = $pdo->prepare($sql);
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // --- POST: Create Vehicle ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
-
+    
     if (empty($input['make']) || empty($input['model']) || empty($input['plate'])) {
         http_response_code(400);
         echo json_encode(['error' => 'Missing fields']);
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $input['plate'],
             $input['status'] ?? 'active'
         ]);
-
+        
         http_response_code(201);
         echo json_encode(['message' => 'Vehicle created']);
     } catch (\PDOException $e) {

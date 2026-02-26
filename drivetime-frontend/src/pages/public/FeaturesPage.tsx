@@ -25,39 +25,39 @@ export function FeaturesPage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          <FeatureCard
+          <FeatureCard 
             icon={<Calendar className="w-8 h-8 text-blue-600" />}
             title="Calendario Inteligente"
             desc="Sincronización en tiempo real. Evita conflictos de horarios y permite que los alumnos reserven 24/7."
           />
-          <FeatureCard
+          <FeatureCard 
             icon={<UserCheck className="w-8 h-8 text-green-600" />}
             title="Perfiles de Usuario"
             desc="Instructores, alumnos y administradores tienen paneles personalizados con la información que necesitan."
           />
-          <FeatureCard
+          <FeatureCard 
             icon={<Smartphone className="w-8 h-8 text-purple-600" />}
             title="Experiencia Móvil"
             desc="Tus alumnos viven pegados al móvil. Dales una app web rápida y sencilla para gestionar sus clases."
           />
-          <FeatureCard
+          <FeatureCard 
             icon={<Shield className="w-8 h-8 text-orange-500" />}
             title="Seguridad de Datos"
             desc="Copias de seguridad diarias, encriptación SSL y cumplimiento estricto de la normativa GDPR."
           />
-          <FeatureCard
+          <FeatureCard 
             icon={<TrendingUp className="w-8 h-8 text-pink-500" />}
             title="Analíticas y Reportes"
             desc="Visualiza el rendimiento de tus profesores, horas más demandadas e ingresos mensuales."
           />
-          <FeatureCard
+          <FeatureCard 
             icon={<Car className="w-8 h-8 text-cyan-500" />}
             title="Gestión de Flota"
             desc="Controla qué vehículo usa cada profesor y gestiona mantenimientos (Próximamente)."
           />
         </div>
       </main>
-
+      
       <footer className="bg-slate-900 text-slate-400 py-12 text-center">
         <p>&copy; {new Date().getFullYear()} DriveTime SaaS.</p>
       </footer>

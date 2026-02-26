@@ -22,10 +22,10 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      <SidebarLayout
-        title="Admin Panel"
-        links={links}
-        logout={logout}
+      <SidebarLayout 
+        title="Admin Panel" 
+        links={links} 
+        logout={logout} 
         colorClass="text-purple-600"
       />
       <main className="flex-1 p-4 md:p-8 overflow-y-auto w-full">

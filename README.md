@@ -134,7 +134,7 @@ Para que la aplicación funcione correctamente (especialmente las rutas de React
             Options Indexes FollowSymLinks
             AllowOverride All
             Require all granted
-
+            
             # Redirigir todas las rutas a index.html (necesario para React Router)
             RewriteEngine On
             RewriteCond %{REQUEST_URI} !^/api

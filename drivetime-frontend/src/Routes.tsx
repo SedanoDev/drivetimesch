@@ -44,7 +44,7 @@ export function AppRoutes() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
-
+      
       {/* Redirect Helper */}
       <Route path="/dashboard-redirect" element={
           !user ? <Navigate to="/login" replace /> :
@@ -56,7 +56,7 @@ export function AppRoutes() {
 
       {/* Student Routes */}
       <Route path="/student" element={user?.role === 'student' ? <StudentLayout /> : <Navigate to="/login" />}>
-         <Route path="dashboard" element={<StudentBookingPage />} />
+         <Route path="dashboard" element={<StudentBookingPage />} /> 
          {/* Assuming Dashboard serves as Booking Page for now or make separate dashboard */}
          <Route path="bookings" element={<StudentMyClasses />} />
          <Route path="progress" element={<div>Progreso (Próximamente)</div>} />

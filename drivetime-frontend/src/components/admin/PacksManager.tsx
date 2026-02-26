@@ -39,9 +39,9 @@ export function PacksManager() {
       try {
           const res = await fetch(`${API_URL}/packs.php`, {
               method: 'POST',
-              headers: {
+              headers: { 
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
+                  'Authorization': `Bearer ${token}` 
               },
               body: JSON.stringify(newPack)
           });

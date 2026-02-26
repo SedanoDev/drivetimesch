@@ -86,7 +86,7 @@ export function LoginPage() {
             <h1 className="text-2xl font-bold text-slate-800 capitalize">{tenantName}</h1>
             {slug && <p className="text-sm text-slate-400 mt-1">Acceso Alumnos e Instructores</p>}
         </div>
-
+        
         {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm font-medium">
             {error}
@@ -104,7 +104,7 @@ export function LoginPage() {
               required
             />
           </div>
-
+          
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
             <input
@@ -124,11 +124,11 @@ export function LoginPage() {
             {loading ? 'Iniciando...' : 'Iniciar Sesión'}
           </button>
         </form>
-
+        
         <p className="text-xs text-center mt-6 text-slate-400">
           Usa <strong>alumno@demo.com</strong> / <strong>123456</strong> para probar.
         </p>
-
+        
         {!slug && (
             <div className="mt-6 text-center pt-6 border-t border-slate-100">
                 <Link to="/find-school" className="text-sm text-blue-600 font-bold hover:underline">

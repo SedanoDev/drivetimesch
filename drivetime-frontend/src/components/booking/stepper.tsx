@@ -21,7 +21,7 @@ export function Stepper({ currentStep, className, onStepClick }: StepperProps) {
         {steps.map((step, index) => {
           const isCompleted = step.id < currentStep;
           const isCurrent = step.id === currentStep;
-
+          
           return (
             <div key={step.id} className="flex-1 flex flex-col items-center relative group">
                {/* Line to the left (if not first) */}
@@ -40,7 +40,7 @@ export function Stepper({ currentStep, className, onStepClick }: StepperProps) {
                 )} />
                )}
 
-              <div
+              <div 
                 onClick={() => isCompleted && onStepClick && onStepClick(step.id)}
                 className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300 shadow-sm z-10 bg-white",
@@ -51,7 +51,7 @@ export function Stepper({ currentStep, className, onStepClick }: StepperProps) {
               >
                 {isCompleted ? <Check className="w-6 h-6" /> : step.id}
               </div>
-              <span
+              <span 
                 className={cn(
                   "mt-3 text-xs font-semibold uppercase tracking-wider transition-colors duration-300",
                   isCompleted ? "text-green-600" :

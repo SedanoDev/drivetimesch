@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  addMonths,
-  subMonths,
-  isSameMonth,
-  isSameDay,
-  isToday
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfWeek, 
+  endOfWeek, 
+  eachDayOfInterval, 
+  addMonths, 
+  subMonths, 
+  isSameMonth, 
+  isSameDay, 
+  isToday 
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
@@ -66,8 +66,8 @@ export function Calendar({ selectedDate, onSelectDate, className }: CalendarProp
           const isCurrentMonth = isSameMonth(day, currentMonth);
           // Mock availability logic: Weekends have no classes, some weekdays are full
           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-          const hasClasses = !isWeekend;
-
+          const hasClasses = !isWeekend; 
+          
           return (
             <button
               key={day.toString()}
@@ -75,8 +75,8 @@ export function Calendar({ selectedDate, onSelectDate, className }: CalendarProp
               disabled={!isCurrentMonth || !hasClasses}
               className={cn(
                 "h-10 w-10 rounded-xl flex flex-col items-center justify-center text-sm font-medium transition-all relative mx-auto",
-                !isCurrentMonth ? "text-slate-300 opacity-50 cursor-default" :
-                !hasClasses ? "text-slate-300 cursor-not-allowed" :
+                !isCurrentMonth ? "text-slate-300 opacity-50 cursor-default" : 
+                !hasClasses ? "text-slate-300 cursor-not-allowed" : 
                 "hover:bg-blue-50 text-slate-700 cursor-pointer",
                 isSelected ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200" : "",
                 isToday(day) && !isSelected ? "border border-blue-600 text-blue-600 font-bold" : ""
@@ -93,7 +93,7 @@ export function Calendar({ selectedDate, onSelectDate, className }: CalendarProp
           );
         })}
       </div>
-
+      
       <div className="mt-8 flex items-center justify-center gap-4 text-[10px] font-medium text-slate-500">
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-green-500"></span>

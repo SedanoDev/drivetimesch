@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $instructorId = $instStmt->fetchColumn();
 
         if (!$instructorId) {
-            // Auto-create instructor profile if missing (rare edge case)
+            // Auto-create instructor profile if missing
             $instructorId = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
                 mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff),
                 mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000,
@@ -92,26 +92,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     // Mode: Config (Instructor viewing their own schedule)
     if (isset($_GET['mode']) && $_GET['mode'] === 'config') {
-        if ($user['role'] !== 'instructor') {
-            http_response_code(403);
-            exit;
-        }
+        if ($user['role'] !== 'instructor') { http_response_code(403); exit; }
 
         try {
             $instStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
             $instStmt->execute([$user['sub']]);
             $instructorId = $instStmt->fetchColumn();
 
-            if (!$instructorId) {
-                echo json_encode([]);
-                exit;
-            }
+            if (!$instructorId) { echo json_encode([]); exit; }
 
             $stmt = $pdo->prepare("SELECT day_of_week as day, start_time as start, end_time as end, is_active as active FROM availabilities WHERE instructor_id = ? ORDER BY day_of_week");
             $stmt->execute([$instructorId]);
             $schedule = $stmt->fetchAll();
 
-            // Format time (remove seconds) and ensure boolean for active
             foreach ($schedule as &$s) {
                 $s['start'] = substr($s['start'], 0, 5);
                 $s['end'] = substr($s['end'], 0, 5);
@@ -119,6 +112,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
 
             echo json_encode($schedule);
+        } catch (\PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    // Mode: Month (Get available days for calendar)
+    if (isset($_GET['mode']) && $_GET['mode'] === 'month') {
+        $instructorId = $_GET['instructorId'] ?? null;
+        $month = $_GET['month'] ?? date('m'); // 1-12
+        $year = $_GET['year'] ?? date('Y');
+
+        if (!$instructorId) { echo json_encode([]); exit; }
+
+        try {
+            // Get configured days of week (0-6)
+            $stmtAvail = $pdo->prepare("SELECT day_of_week FROM availabilities WHERE instructor_id = ? AND is_active = 1");
+            $stmtAvail->execute([$instructorId]);
+            $availableDaysOfWeek = $stmtAvail->fetchAll(PDO::FETCH_COLUMN);
+
+            if (empty($availableDaysOfWeek)) {
+                echo json_encode([]);
+                exit;
+            }
+
+            // Simple logic: If DOW is configured, check if fully booked?
+            // For monthly view, checking full booking status for every day is expensive.
+            // Simplified: Return dates where DOW is active.
+            // Better: Check bookings count vs capacity?
+
+            // Let's just return dates that match the schedule for now (Green Dots).
+            // Frontend calendar will filter past dates.
+
+            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+            $availableDates = [];
+
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $dateStr = sprintf("%04d-%02d-%02d", $year, $month, $d);
+                $dow = date('w', strtotime($dateStr)); // 0-6
+
+                if (in_array($dow, $availableDaysOfWeek)) {
+                    $availableDates[] = $dateStr;
+                }
+            }
+
+            echo json_encode($availableDates);
+
         } catch (\PDOException $e) {
             http_response_code(500);
             echo json_encode(['error' => $e->getMessage()]);
@@ -138,14 +179,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
         $dow = date('w', strtotime($date));
-        // Note: PHP 'w' is 0 (Sunday) to 6 (Saturday). Our DB uses same convention.
 
         $stmtAvail = $pdo->prepare("SELECT start_time, end_time FROM availabilities WHERE instructor_id = ? AND day_of_week = ? AND is_active = 1");
         $stmtAvail->execute([$instructorId, $dow]);
         $availability = $stmtAvail->fetch();
 
         if (!$availability) {
-            // No availability configured for this day
             echo json_encode([]);
             exit;
         }
@@ -157,25 +196,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $startTs = strtotime("$date $startStr");
         $endTs = strtotime("$date $endStr");
 
-        // Get bookings to exclude
         $stmtBooked = $pdo->prepare("SELECT start_time FROM bookings WHERE instructor_id = ? AND booking_date = ? AND status != 'cancelled'");
         $stmtBooked->execute([$instructorId, $date]);
         $bookedTimes = $stmtBooked->fetchAll(PDO::FETCH_COLUMN);
 
-        // Normalize booked times to H:i:00
         $bookedTimes = array_map(function($t) { return date('H:i:00', strtotime($t)); }, $bookedTimes);
 
-        // Generate 1-hour slots
         while ($startTs < $endTs) {
-            // Check if slot fits (start + 60 mins <= end)
             if (strtotime('+60 minutes', $startTs) > $endTs) break;
 
             $timeStr = date('H:i', $startTs);
             $dbTimeStr = date('H:i:00', $startTs);
 
             $isBooked = in_array($dbTimeStr, $bookedTimes);
-
-            // Check if slot is in the past (if today)
             $isPast = (date('Y-m-d') === $date && $startTs < time());
 
             if (!$isBooked && !$isPast) {
@@ -185,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $startTs = strtotime('+1 hour', $startTs);
         }
 
-        echo json_encode($slots); // Returns simple array of strings ['09:00', '10:00']
+        echo json_encode($slots);
 
     } catch (\PDOException $e) {
         http_response_code(500);

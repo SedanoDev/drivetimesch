@@ -61,7 +61,11 @@ export function StudentBookingPage() {
           .then(data => {
               // Handle object response { available_days: [...] } or array (legacy)
               if (data.available_days && Array.isArray(data.available_days)) {
-                  setAvailableDates(data.available_days);
+                  // Construct date strings for current month
+                  const year = viewDate.getFullYear();
+                  const month = (viewDate.getMonth() + 1).toString().padStart(2, '0');
+                  const dates = data.available_days.map((d: number) => `${year}-${month}-${d.toString().padStart(2, '0')}`);
+                  setAvailableDates(dates);
               } else if (Array.isArray(data)) {
                   setAvailableDates(data);
               } else {

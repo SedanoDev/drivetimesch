@@ -1,0 +1,43 @@
+[Fri Feb 27 16:25:45 2026] PHP 8.3.6 Development Server (http://0.0.0.0:8000) started
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33882 Accepted
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33882 [500]: GET /api/public/tenants.php?slug=demo
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33882 Closing
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33884 Accepted
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33884 [500]: GET /api/public/tenants.php?slug=demo
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33884 Closing
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33900 Accepted
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33900 [200]: OPTIONS /api/auth/login.php
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33900 Closing
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33916 Accepted
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33916 [500]: POST /api/auth/login.php
+[Fri Feb 27 16:27:26 2026] 127.0.0.1:33916 Closing
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45700 Accepted
+[Fri Feb 27 16:31:11 2026] Database Connection Error: SQLSTATE[HY000] [2002] No such file or directory
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45700 [500]: GET /api/public/tenants.php?slug=demo
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45700 Closing
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45704 Accepted
+[Fri Feb 27 16:31:11 2026] Database Connection Error: SQLSTATE[HY000] [2002] No such file or directory
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45704 [500]: GET /api/public/tenants.php?slug=demo
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45704 Closing
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45718 Accepted
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45718 [200]: OPTIONS /api/auth/login.php
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45718 Closing
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45726 Accepted
+[Fri Feb 27 16:31:11 2026] Database Connection Error: SQLSTATE[HY000] [2002] No such file or directory
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45726 [500]: POST /api/auth/login.php
+[Fri Feb 27 16:31:11 2026] 127.0.0.1:45726 Closing
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59782 Accepted
+[Fri Feb 27 16:32:07 2026] Database Connection Error: SQLSTATE[HY000] [2002] Connection refused
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59782 [500]: GET /api/public/tenants.php?slug=demo
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59782 Closing
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59798 Accepted
+[Fri Feb 27 16:32:07 2026] Database Connection Error: SQLSTATE[HY000] [2002] Connection refused
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59798 [500]: GET /api/public/tenants.php?slug=demo
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59798 Closing
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59814 Accepted
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59814 [200]: OPTIONS /api/auth/login.php
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59814 Closing
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59830 Accepted
+[Fri Feb 27 16:32:07 2026] Database Connection Error: SQLSTATE[HY000] [2002] Connection refused
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59830 [500]: POST /api/auth/login.php
+[Fri Feb 27 16:32:07 2026] 127.0.0.1:59830 Closing

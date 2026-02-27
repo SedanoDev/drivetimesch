@@ -126,16 +126,35 @@ try {
             // Fetch Standard Weekly Template ORDER BY DAY
             $stmt = $pdo->prepare("SELECT day_of_week as day, start_time as start, end_time as end, is_active as active FROM availabilities WHERE instructor_id = ? ORDER BY day_of_week ASC");
             $stmt->execute([$instructorId]);
-            $results = $stmt->fetchAll();
+            $dbResults = $stmt->fetchAll();
 
-            // Cast boolean/numbers for frontend compatibility
-            foreach ($results as &$row) {
-                $row['day'] = (int)$row['day'];
-                $row['active'] = (bool)$row['active'];
-                $row['start'] = substr($row['start'], 0, 5);
-                $row['end'] = substr($row['end'], 0, 5);
+            // Map to Day index (0-6)
+            $dbMap = [];
+            foreach ($dbResults as $row) {
+                $dbMap[(int)$row['day']] = $row;
             }
-            echo json_encode($results);
+
+            // Fill missing days with "Closed" (active = false)
+            $fullWeek = [];
+            for ($i = 0; $i < 7; $i++) {
+                if (isset($dbMap[$i])) {
+                    $row = $dbMap[$i];
+                    $row['day'] = (int)$row['day'];
+                    $row['active'] = (bool)$row['active'];
+                    $row['start'] = substr($row['start'], 0, 5);
+                    $row['end'] = substr($row['end'], 0, 5);
+                    $fullWeek[] = $row;
+                } else {
+                    $fullWeek[] = [
+                        'day' => $i,
+                        'active' => false, // Default closed if missing
+                        'start' => '09:00',
+                        'end' => '18:00'
+                    ];
+                }
+            }
+
+            echo json_encode($fullWeek);
         }
         else {
              // Mode: Details or Public Slots
@@ -263,6 +282,8 @@ try {
                 $end = $day['end'] ?? $day['end_time'] ?? '18:00';
                 $dayOfWeek = $day['day']; // 0-6
 
+                // Save even inactive days to ensure template state is preserved
+                // This ensures GET logic can distinguish between "Configured Closed" vs "Missing/Unconfigured"
                 $stmtInsert->execute([$uuid, $user['tenant_id'], $instructorId, $dayOfWeek, $start, $end, $isActive]);
             }
         }

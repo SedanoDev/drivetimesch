@@ -59,7 +59,14 @@ export function StudentBookingPage() {
           })
           .then(res => res.json())
           .then(data => {
-              if (Array.isArray(data)) setAvailableDates(data);
+              // Handle object response { available_days: [...] } or array (legacy)
+              if (data.available_days && Array.isArray(data.available_days)) {
+                  setAvailableDates(data.available_days);
+              } else if (Array.isArray(data)) {
+                  setAvailableDates(data);
+              } else {
+                  setAvailableDates([]);
+              }
           })
           .catch(console.error);
       } else {
@@ -71,7 +78,8 @@ export function StudentBookingPage() {
   useEffect(() => {
     if (selectedInstructorId && selectedDate && token) {
         setIsLoadingSlots(true);
-        const dateStr = selectedDate.toISOString().split('T')[0];
+        // Use local date string (YYYY-MM-DD) to avoid UTC shifts
+        const dateStr = selectedDate.toLocaleDateString('en-CA');
 
         fetch(`${API_URL}/availability.php?instructorId=${selectedInstructorId}&date=${dateStr}`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -126,7 +134,7 @@ export function StudentBookingPage() {
       setIsSubmitting(true);
       const result = await createBooking({
           instructor_id: selectedInstructorId!,
-          booking_date: selectedDate!.toISOString().split('T')[0],
+          booking_date: selectedDate!.toLocaleDateString('en-CA'),
           start_time: selectedTime!,
       });
 

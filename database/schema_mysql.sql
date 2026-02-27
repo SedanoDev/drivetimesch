@@ -232,3 +232,175 @@ CREATE TABLE IF NOT EXISTS instructor_schedules (
     FOREIGN KEY (instructor_id) REFERENCES instructors(id) ON DELETE CASCADE,
     UNIQUE KEY idx_instr_date (instructor_id, schedule_date)
 );
+-- Extra Seed Data to simulate a busy, established driving school
+-- Uses the existing @tenant_id from the top of the file
+
+-- 7. Create more Students (Users)
+SET @s1_id = UUID(); SET @s2_id = UUID(); SET @s3_id = UUID(); SET @s4_id = UUID(); SET @s5_id = UUID();
+SET @s6_id = UUID(); SET @s7_id = UUID(); SET @s8_id = UUID(); SET @s9_id = UUID(); SET @s10_id = UUID();
+-- Extra Seed Data to simulate a busy, established driving school
+-- Uses the existing @tenant_id from the top of the file
+
+-- 7. Create more Students (Users)
+SET @s1_id = UUID(); SET @s2_id = UUID(); SET @s3_id = UUID(); SET @s4_id = UUID(); SET @s5_id = UUID();
+SET @s6_id = UUID(); SET @s7_id = UUID(); SET @s8_id = UUID(); SET @s9_id = UUID(); SET @s10_id = UUID();
+
+INSERT INTO users (id, tenant_id, email, password_hash, full_name, role) VALUES
+(@s1_id, @tenant_id, 'maria.gomez@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Maria Gomez', 'student'),
+(@s2_id, @tenant_id, 'juan.perez@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Juan Perez', 'student'),
+(@s3_id, @tenant_id, 'lucia.fernandez@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Lucia Fernandez', 'student'),
+(@s4_id, @tenant_id, 'david.ruiz@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'David Ruiz', 'student'),
+(@s5_id, @tenant_id, 'sofia.martin@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Sofia Martin', 'student'),
+(@s6_id, @tenant_id, 'alejandro.diaz@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Alejandro Diaz', 'student'),
+(@s7_id, @tenant_id, 'carmen.moreno@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Carmen Moreno', 'student'),
+(@s8_id, @tenant_id, 'pablo.munoz@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Pablo Muñoz', 'student'),
+(@s9_id, @tenant_id, 'laura.alvarez@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Laura Alvarez', 'student'),
+(@s10_id, @tenant_id, 'diego.romero@demo.com', '$2y$10$jQ7rInDjChpvPW7nI7D3OeRf0FYFxdQyDN5prUsJluw4rKvgre786', 'Diego Romero', 'student');
+
+-- 8. Give students Class Packs
+-- Get Pack IDs
+SELECT id INTO @pack5_id FROM class_packs WHERE name = 'Pack 5 Clases' AND tenant_id = @tenant_id LIMIT 1;
+SELECT id INTO @pack10_id FROM class_packs WHERE name = 'Pack 10 Clases' AND tenant_id = @tenant_id LIMIT 1;
+
+INSERT INTO student_packs (id, tenant_id, student_id, pack_id, initial_classes, remaining_classes, purchase_date, expiration_date) VALUES
+(UUID(), @tenant_id, @s1_id, @pack10_id, 10, 2, DATE_SUB(CURDATE(), INTERVAL 30 DAY), DATE_ADD(CURDATE(), INTERVAL 60 DAY)),
+(UUID(), @tenant_id, @s2_id, @pack5_id, 5, 0, DATE_SUB(CURDATE(), INTERVAL 45 DAY), DATE_ADD(CURDATE(), INTERVAL 45 DAY)), -- Empty pack
+(UUID(), @tenant_id, @s2_id, @pack10_id, 10, 8, DATE_SUB(CURDATE(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 85 DAY)),  -- New pack
+(UUID(), @tenant_id, @s3_id, @pack10_id, 10, 4, DATE_SUB(CURDATE(), INTERVAL 20 DAY), DATE_ADD(CURDATE(), INTERVAL 70 DAY)),
+(UUID(), @tenant_id, @s4_id, @pack5_id, 5, 1, DATE_SUB(CURDATE(), INTERVAL 15 DAY), DATE_ADD(CURDATE(), INTERVAL 75 DAY)),
+(UUID(), @tenant_id, @s5_id, @pack10_id, 10, 10, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 90 DAY)), -- Just bought
+(UUID(), @tenant_id, @s6_id, @pack5_id, 5, 5, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 90 DAY)),
+(UUID(), @tenant_id, @s7_id, @pack10_id, 10, 3, DATE_SUB(CURDATE(), INTERVAL 25 DAY), DATE_ADD(CURDATE(), INTERVAL 65 DAY)),
+(UUID(), @tenant_id, @s8_id, @pack5_id, 5, 2, DATE_SUB(CURDATE(), INTERVAL 10 DAY), DATE_ADD(CURDATE(), INTERVAL 80 DAY)),
+(UUID(), @tenant_id, @s9_id, @pack10_id, 10, 6, DATE_SUB(CURDATE(), INTERVAL 12 DAY), DATE_ADD(CURDATE(), INTERVAL 78 DAY)),
+(UUID(), @tenant_id, @s10_id, @pack5_id, 5, 0, DATE_SUB(CURDATE(), INTERVAL 60 DAY), DATE_ADD(CURDATE(), INTERVAL 30 DAY));
+
+-- Get instructor IDs
+SELECT id INTO @carlos_inst_id FROM instructors WHERE name = 'Carlos Martinez' AND tenant_id = @tenant_id LIMIT 1;
+SELECT id INTO @ana_inst_id FROM instructors WHERE name = 'Ana Lopez' AND tenant_id = @tenant_id LIMIT 1;
+
+-- 9. Create Historical Bookings (Completed / Cancelled)
+-- We will simulate the last 3 weeks.
+-- Mon (Carlos), Tue (Ana), Wed (Carlos), Thu (Ana), Fri (Carlos)
+
+DELIMITER //
+
+CREATE PROCEDURE GenerateDemoBookings(IN tenantUUID VARCHAR(36))
+BEGIN
+    DECLARE i INT DEFAULT 0;
+    DECLARE days_ago INT;
+    DECLARE booking_date DATE;
+
+    DECLARE v_carlos_id VARCHAR(36);
+    DECLARE v_ana_id VARCHAR(36);
+    DECLARE student_uuid VARCHAR(36);
+    DECLARE s_name VARCHAR(255);
+    DECLARE v_stud_idx INT DEFAULT 1;
+
+    SELECT id INTO v_carlos_id FROM instructors WHERE name = 'Carlos Martinez' AND tenant_id = tenantUUID LIMIT 1;
+    SELECT id INTO v_ana_id FROM instructors WHERE name = 'Ana Lopez' AND tenant_id = tenantUUID LIMIT 1;
+
+    -- Generate Past Bookings (Completed / Cancelled)
+    WHILE i < 40 DO
+        SET days_ago = 21 - (i DIV 2); -- Distribute over the last 21 days
+        SET booking_date = DATE_SUB(CURDATE(), INTERVAL days_ago DAY);
+
+        -- Use a temporary table logic to pick student or a simpler CASE
+        SET v_stud_idx = (v_stud_idx + 1) % 10;
+        SELECT id, full_name INTO student_uuid, s_name FROM users WHERE role = 'student' AND tenant_id = tenantUUID ORDER BY id LIMIT v_stud_idx, 1;
+
+        -- Carlos works Mon(1), Wed(3), Fri(5). Ana works Tue(2), Thu(4).
+        -- Map dayofweek to instructor and time slots
+        -- In MySQL DAYOFWEEK is 1=Sun, 2=Mon... so 2,4,6 for Carlos and 3,5 for Ana
+
+        IF DAYOFWEEK(booking_date) IN (2, 4, 6) THEN
+            -- Carlos
+            INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes, status, notes)
+            VALUES (UUID(), tenantUUID, v_carlos_id, student_uuid, s_name, booking_date,
+                    IF(i % 2 = 0, '10:00:00', '16:00:00'), 60,
+                    IF(i % 5 = 0, 'cancelled', 'completed'),
+                    IF(i % 5 = 0, 'Cancelado por indisposición', 'Buena práctica de aparcamiento'));
+        ELSEIF DAYOFWEEK(booking_date) IN (3, 5) THEN
+            -- Ana
+            INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes, status, notes)
+            VALUES (UUID(), tenantUUID, v_ana_id, student_uuid, s_name, booking_date,
+                    IF(i % 2 = 0, '11:00:00', '17:00:00'), 60,
+                    IF(i % 7 = 0, 'cancelled', 'completed'),
+                    IF(i % 7 = 0, 'Aviso con poca antelación', 'Conducción muy fluida en autopista'));
+        END IF;
+
+        SET i = i + 1;
+    END WHILE;
+
+    -- Generate Future Bookings (Confirmed)
+    SET i = 0;
+    WHILE i < 15 DO
+        SET days_ago = (i DIV 2) + 1; -- Next 7 days
+        SET booking_date = DATE_ADD(CURDATE(), INTERVAL days_ago DAY);
+
+        SET v_stud_idx = (v_stud_idx + 1) % 10;
+        SELECT id, full_name INTO student_uuid, s_name FROM users WHERE role = 'student' AND tenant_id = tenantUUID ORDER BY id LIMIT v_stud_idx, 1;
+
+        IF DAYOFWEEK(booking_date) IN (2, 4, 6) THEN
+            INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes, status)
+            VALUES (UUID(), tenantUUID, v_carlos_id, student_uuid, s_name, booking_date, IF(i % 2 = 0, '09:00:00', '15:00:00'), 60, 'confirmed');
+        ELSEIF DAYOFWEEK(booking_date) IN (3, 5) THEN
+            INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes, status)
+            VALUES (UUID(), tenantUUID, v_ana_id, student_uuid, s_name, booking_date, IF(i % 2 = 0, '10:00:00', '18:00:00'), 60, 'confirmed');
+        END IF;
+
+        SET i = i + 1;
+    END WHILE;
+
+    -- Generate Pending Bookings for Instructors (To test the new UI)
+    SET i = 0;
+    WHILE i < 8 DO
+        SET days_ago = (i DIV 2) + 2;
+        SET booking_date = DATE_ADD(CURDATE(), INTERVAL days_ago DAY);
+
+        SET v_stud_idx = (v_stud_idx + 1) % 10;
+        SELECT id, full_name INTO student_uuid, s_name FROM users WHERE role = 'student' AND tenant_id = tenantUUID ORDER BY id LIMIT v_stud_idx, 1;
+
+        IF DAYOFWEEK(booking_date) IN (2, 4, 6) THEN
+            INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes, status)
+            VALUES (UUID(), tenantUUID, v_carlos_id, student_uuid, s_name, booking_date, IF(i % 2 = 0, '11:00:00', '17:00:00'), 60, 'pending');
+        ELSEIF DAYOFWEEK(booking_date) IN (3, 5) THEN
+            INSERT INTO bookings (id, tenant_id, instructor_id, student_id, student_name, booking_date, start_time, duration_minutes, status)
+            VALUES (UUID(), tenantUUID, v_ana_id, student_uuid, s_name, booking_date, IF(i % 2 = 0, '12:00:00', '16:00:00'), 60, 'pending');
+        END IF;
+
+        SET i = i + 1;
+    END WHILE;
+
+END //
+DELIMITER ;
+
+CALL GenerateDemoBookings(@tenant_id);
+DROP PROCEDURE GenerateDemoBookings;
+
+-- 10. Generate Reviews for Completed Bookings
+INSERT INTO reviews (id, tenant_id, booking_id, student_id, instructor_id, rating, comment, created_at)
+SELECT UUID(), b.tenant_id, b.id, b.student_id, b.instructor_id,
+       -- Random rating between 3 and 5 for completed classes
+       FLOOR(3 + (RAND() * 3)),
+       -- Select a random review comment
+       ELT(FLOOR(1 + (RAND() * 7)),
+           'Excelente clase, el profesor explica muy bien los giros.',
+           'Poco a poco voy perdiendo el miedo a la autopista.',
+           'Muy paciente, me ha ayudado mucho con el aparcamiento.',
+           'Clase muy productiva. Me sentí seguro al volante.',
+           'Todo bien, aunque hubo mucho tráfico.',
+           '¡El mejor instructor que he tenido!',
+           'Muy profesional, puntual y claro en sus indicaciones.'),
+       b.booking_date
+FROM bookings b
+WHERE b.status = 'completed' AND b.tenant_id = @tenant_id
+ORDER BY RAND()
+LIMIT 20;
+
+-- Update instructor reviews count based on these generated reviews
+UPDATE instructors i
+SET
+    reviews_count = (SELECT COUNT(*) FROM reviews r WHERE r.instructor_id = i.id),
+    rating = COALESCE((SELECT ROUND(AVG(rating), 1) FROM reviews r WHERE r.instructor_id = i.id), 0.0)
+WHERE i.tenant_id = @tenant_id;

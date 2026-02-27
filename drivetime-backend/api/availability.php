@@ -73,9 +73,50 @@ try {
         if ($mode === 'month') {
              $month = $_GET['month'] ?? date('m');
              $year = $_GET['year'] ?? date('Y');
-             // Robust days in month
              $daysInMonth = (int)date('t', strtotime("$year-$month-01"));
-             $availableDays = range(1, $daysInMonth);
+
+             // Check availability for EACH day (Simplified logic for performance)
+             // We check if (is active in template AND no override) OR (override exists and is active)
+
+             // 1. Get Template (Map: day_of_week => is_active)
+             $stmtTpl = $pdo->prepare("SELECT day_of_week, is_active FROM availabilities WHERE instructor_id = ?");
+             $stmtTpl->execute([$instructorId]);
+             $template = $stmtTpl->fetchAll(PDO::FETCH_KEY_PAIR); // [day => active]
+
+             // 2. Get Overrides for this month
+             $startMonth = "$year-$month-01";
+             $endMonth = date('Y-m-t', strtotime($startMonth));
+             $stmtOver = $pdo->prepare("SELECT schedule_date, is_active FROM instructor_schedules WHERE instructor_id = ? AND schedule_date BETWEEN ? AND ?");
+             $stmtOver->execute([$instructorId, $startMonth, $endMonth]);
+             $overrides = $stmtOver->fetchAll(PDO::FETCH_KEY_PAIR); // [date => active]
+
+             $availableDays = [];
+
+             for ($d = 1; $d <= $daysInMonth; $d++) {
+                 $currentDate = "$year-$month-" . str_pad($d, 2, '0', STR_PAD_LEFT);
+                 $dayOfWeek = date('w', strtotime($currentDate));
+
+                 // Determine availability
+                 $isAvailable = false;
+
+                 if (isset($overrides[$currentDate])) {
+                     $isAvailable = (bool)$overrides[$currentDate];
+                 } elseif (isset($template[$dayOfWeek])) {
+                     $isAvailable = (bool)$template[$dayOfWeek];
+                 } else {
+                     // Default: If any template exists, missing = closed. Else default M-F.
+                     if (!empty($template)) {
+                         $isAvailable = false;
+                     } else {
+                         $isAvailable = ($dayOfWeek >= 1 && $dayOfWeek <= 5);
+                     }
+                 }
+
+                 if ($isAvailable) {
+                     $availableDays[] = $d;
+                 }
+             }
+
              echo json_encode(['available_days' => $availableDays]);
         }
         elseif ($mode === 'weekly') {
@@ -131,7 +172,6 @@ try {
                      $baseStart = substr($template['start_time'], 0, 5);
                      $baseEnd = substr($template['end_time'], 0, 5);
                  } else {
-                     // Logic: If ANY template exists, missing day = closed. If NO templates, default M-F 9-18.
                      $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM availabilities WHERE instructor_id = ?");
                      $stmtCount->execute([$instructorId]);
                      $hasAnyTemplate = $stmtCount->fetchColumn() > 0;
@@ -184,7 +224,14 @@ try {
         $input = json_decode(file_get_contents('php://input'), true);
         $mode = $_GET['mode'] ?? 'day';
 
-        $instructorId = $input['instructor_id'] ?? null;
+        // Handle array vs object input for instructor detection
+        if (is_array($input) && isset($input[0])) {
+             // Array input (Weekly) - check if ANY element has instructor_id or default to user
+             $instructorId = null; // Can't easily get from array items if not there
+        } else {
+             $instructorId = $input['instructor_id'] ?? null;
+        }
+
         if (!$instructorId && $user && $user['role'] === 'instructor') {
             $stmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
             $stmt->execute([$user['sub']]);

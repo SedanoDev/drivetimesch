@@ -1,15 +1,12 @@
-RewriteEngine On
+# Enable Apache modules if not already enabled (handled by Dockerfile)
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+# </IfModule>
 
-# Allow CORS
-Header set Access-Control-Allow-Origin "*"
-Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
-Header set Access-Control-Allow-Headers "Content-Type, Authorization"
-
-# Handle Options method (Preflight)
-RewriteCond %{REQUEST_METHOD} OPTIONS
-RewriteRule ^(.*)$ $1 [R=200,L]
-
-# Route all API requests to the corresponding PHP file
-# RewriteRule ^instructors/?$ instructors.php [L]
-# RewriteRule ^bookings/?$ bookings.php [L]
-# RewriteRule ^availability/?$ availability.php [L]
+# Ensure CORS headers are sent even on 500 errors
+<IfModule mod_headers.c>
+    # Note: Apache might not know HTTP_ORIGIN dynamically in .htaccess easily without mod_rewrite tricks
+    # For dev, we can set * or verify origin.
+    # But PHP handles it better. This is just a backup.
+    # Header set Access-Control-Allow-Origin "*"
+</IfModule>

@@ -73,6 +73,7 @@ try {
         if ($mode === 'month') {
              $month = $_GET['month'] ?? date('m');
              $year = $_GET['year'] ?? date('Y');
+             // Robust days in month
              $daysInMonth = (int)date('t', strtotime("$year-$month-01"));
              $availableDays = range(1, $daysInMonth);
              echo json_encode(['available_days' => $availableDays]);
@@ -81,8 +82,8 @@ try {
             if (!$instructorId) {
                 http_response_code(400); echo json_encode(['error'=>'Instructor not identified']); exit;
             }
-            // Fetch Standard Weekly Template
-            $stmt = $pdo->prepare("SELECT day_of_week as day, start_time as start, end_time as end, is_active as active FROM availabilities WHERE instructor_id = ?");
+            // Fetch Standard Weekly Template ORDER BY DAY
+            $stmt = $pdo->prepare("SELECT day_of_week as day, start_time as start, end_time as end, is_active as active FROM availabilities WHERE instructor_id = ? ORDER BY day_of_week ASC");
             $stmt->execute([$instructorId]);
             $results = $stmt->fetchAll();
 
@@ -206,7 +207,7 @@ try {
 
             foreach ($days as $day) {
                 // Map Frontend keys (day, active, start, end) to DB (day_of_week, is_active, start_time, end_time)
-                if (!isset($day['day'])) continue; // Frontend sends 'day' not 'day_of_week'
+                if (!isset($day['day'])) continue;
 
                 $uuid = Database::generateUuid();
                 // Check both keys to be safe

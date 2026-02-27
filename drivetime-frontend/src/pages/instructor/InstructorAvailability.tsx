@@ -44,7 +44,15 @@ export function InstructorAvailability() {
           })
           .then(res => res.json())
           .then(data => {
-              if (Array.isArray(data)) setAvailableDates(data);
+              if (data.available_days) {
+                  // Construct date strings for current month
+                  const year = selectedDate.getFullYear();
+                  const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+                  const dates = data.available_days.map((d: number) => `${year}-${month}-${d.toString().padStart(2, '0')}`);
+                  setAvailableDates(dates);
+              } else if (Array.isArray(data)) {
+                  setAvailableDates(data);
+              }
           })
           .catch(console.error);
       }

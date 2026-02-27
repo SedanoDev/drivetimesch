@@ -1,12 +1,6 @@
 <?php
 // config.php
-require_once __DIR__ . '/vendor/autoload.php';
-
-// Load .env
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->safeLoad();
-
-// Allow CORS
+// Allow CORS first, so frontend can see errors if autoload fails
 $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
 $allowed_origins = [
     'http://localhost:5173',
@@ -28,6 +22,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
+
+// NOW check dependencies
+if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'Backend dependencies missing! Please run `docker-compose exec backend composer install` or `./setup_project.sh`.'
+    ]);
+    exit;
+}
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Load .env
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
 
 // Global variable for backward compatibility
 $jwt_secret_key = $_ENV['JWT_SECRET'] ?? 'fallback_secret_do_not_use_in_prod';

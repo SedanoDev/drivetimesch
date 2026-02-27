@@ -16,7 +16,7 @@ try {
     } else {
         throw new Exception("Token required");
     }
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     http_response_code(401);
     echo json_encode(['error' => $e->getMessage()]);
     exit;
@@ -27,25 +27,66 @@ try {
 
     // GET Availability
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $instructorId = $_GET['instructor_id'] ?? null;
+        $instructorId = $_GET['instructor_id'] ?? $_GET['instructorId'] ?? null; // Handle both cases
         $date = $_GET['date'] ?? null;
-        $mode = $_GET['mode'] ?? 'day'; // day | month
+        $mode = $_GET['mode'] ?? 'day';
 
+        // Auto-detect instructor ID if user is instructor
+        if (!$instructorId && $user['role'] === 'instructor') {
+            $stmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
+            $stmt->execute([$user['sub']]);
+            $instructorId = $stmt->fetchColumn();
+        }
+
+        // --- Mode: Month (Overview for calendar dots) ---
         if ($mode === 'month') {
-             // Return array of days with available slots in current month
-             // Simple logic: assume M-F are working days
              $month = $_GET['month'] ?? date('m');
              $year = $_GET['year'] ?? date('Y');
-             // Mock data or complex logic: for now, return simple available days
-             // Check DB for blocked days if implemented
-             echo json_encode(['available_days' => []]);
-        } else {
-             // Return slots for a specific date
+
+             // Simple logic: return all days in month as available for now
+             // Or better: check days with at least one free slot
+             $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+             $availableDays = range(1, $daysInMonth);
+
+             echo json_encode(['available_days' => $availableDays]);
+        }
+
+        // --- Mode: Weekly (For Instructor Dashboard) ---
+        elseif ($mode === 'weekly') {
+            if (!$instructorId) {
+                http_response_code(400); echo json_encode(['error'=>'Instructor not identified']); exit;
+            }
+            // Return bookings for the week to show in calendar
+            // Assuming simplified logic: return bookings for range
+            // Frontend probably needs bookings to display
+            $start = $_GET['start'] ?? date('Y-m-d');
+            $end = $_GET['end'] ?? date('Y-m-d', strtotime('+7 days'));
+
+            $stmt = $pdo->prepare("
+                SELECT id, booking_date, start_time, duration_minutes, status, student_name, notes
+                FROM bookings
+                WHERE instructor_id = ?
+                AND booking_date BETWEEN ? AND ?
+            ");
+            $stmt->execute([$instructorId, $start, $end]);
+            $bookings = $stmt->fetchAll();
+            echo json_encode($bookings);
+        }
+
+        // --- Mode: Details/Day (Specific slots) ---
+        else {
+             // Return slots for a specific date (mode='details' or default)
              if (!$date || !$instructorId) {
-                 http_response_code(400); echo json_encode(['error'=>'Missing date or instructor']); exit;
+                 // If details requested but missing params, return empty or error
+                 if ($mode === 'details' && !$date) {
+                     http_response_code(400); echo json_encode(['error'=>'Missing date']); exit;
+                 }
+                 if (!$instructorId) {
+                     http_response_code(400); echo json_encode(['error'=>'Missing instructor']); exit;
+                 }
              }
 
-             // Generate slots 9am - 6pm
+             // Generate standard slots 9am - 6pm
              $allSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '15:00', '16:00', '17:00', '18:00'];
 
              // Fetch booked slots
@@ -53,12 +94,22 @@ try {
              $stmt->execute([$instructorId, $date]);
              $booked = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-             $available = array_values(array_diff($allSlots, $booked));
-             echo json_encode($available);
+             // If mode is 'details', maybe return full booking objects?
+             // But usually 'details' implies "what's happening this day".
+             // If the frontend expects bookings:
+             if ($mode === 'details') {
+                 $stmtDetails = $pdo->prepare("SELECT * FROM bookings WHERE instructor_id = ? AND booking_date = ?");
+                 $stmtDetails->execute([$instructorId, $date]);
+                 echo json_encode($stmtDetails->fetchAll());
+             } else {
+                 // Default: Available slots
+                 $available = array_values(array_diff($allSlots, $booked));
+                 echo json_encode($available);
+             }
         }
     }
 
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }

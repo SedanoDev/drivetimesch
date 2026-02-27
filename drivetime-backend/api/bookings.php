@@ -48,6 +48,9 @@ try {
     // POST: Create Booking
     elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            throw new Exception("Invalid or empty JSON body", 400);
+        }
         $bookingService->createBooking($user, $input);
         http_response_code(201);
 
@@ -58,6 +61,9 @@ try {
     // PUT: Update Booking
     elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            throw new Exception("Invalid or empty JSON body", 400);
+        }
         if (!isset($input['id'])) throw new Exception("Missing ID");
 
         $bookingService->updateBooking($user, $input['id'], $input);
@@ -74,7 +80,7 @@ try {
          echo json_encode(['error' => 'Use PUT to cancel bookings']);
     }
 
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     $code = $e->getCode() ?: 500;
     // Map common codes
     if ($code < 100 || $code > 599) $code = 500;

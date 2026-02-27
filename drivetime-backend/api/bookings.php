@@ -3,6 +3,9 @@
 // Start output buffering to capture any unwanted output (warnings, notices, etc.)
 ob_start();
 
+// Disable error display to prevent HTML error output in JSON API
+ini_set('display_errors', 0);
+
 require_once __DIR__ . '/../config.php';
 
 use DriveTime\Services\AuthService;
@@ -21,6 +24,7 @@ try {
         throw new Exception("Token required");
     }
 } catch (Exception $e) {
+    ob_clean();
     http_response_code(401);
     echo json_encode(['error' => $e->getMessage()]);
     exit;

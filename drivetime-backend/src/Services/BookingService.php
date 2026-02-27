@@ -108,7 +108,7 @@ class BookingService {
                 AND tenant_id = ?
                 AND remaining_classes > 0
                 AND (expiration_date IS NULL OR expiration_date >= CURDATE())
-                ORDER BY created_at ASC, id ASC
+                ORDER BY purchase_date ASC, id ASC
                 LIMIT 1
                 FOR UPDATE
             ");
@@ -196,7 +196,7 @@ class BookingService {
                     $refundStmt = $this->pdo->prepare("
                         SELECT id FROM student_packs
                         WHERE student_id = ? AND tenant_id = ?
-                        ORDER BY created_at DESC LIMIT 1
+                        ORDER BY purchase_date DESC LIMIT 1
                     ");
                     $refundStmt->execute([$booking['student_id'], $user['tenant_id']]);
                     $pack = $refundStmt->fetch();

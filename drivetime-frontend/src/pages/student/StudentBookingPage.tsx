@@ -138,8 +138,8 @@ export function StudentBookingPage() {
       setIsSubmitting(true);
       const result = await createBooking({
           instructor_id: selectedInstructorId!,
-          booking_date: selectedDate!.toLocaleDateString('en-CA'),
-          start_time: selectedTime!,
+          date: selectedDate!.toLocaleDateString('en-CA'),
+          time_slot: `${selectedTime}:00`,
       });
 
       if (result.success) {

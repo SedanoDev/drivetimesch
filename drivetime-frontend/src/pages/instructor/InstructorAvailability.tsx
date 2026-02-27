@@ -38,8 +38,10 @@ export function InstructorAvailability() {
 
   // Fetch Monthly Availability (Green Dots)
   const fetchMonthAvailability = () => {
-      if (user?.id && token) {
-          fetch(`${API_URL}/availability.php?mode=month&instructorId=${user.id}&month=${selectedDate.getMonth()+1}&year=${selectedDate.getFullYear()}`, {
+      if (token) {
+          // Do not send instructorId if logged in as instructor (let backend resolve it from token)
+          // This ensures we use the correct Instructor UUID, not the User ID
+          fetch(`${API_URL}/availability.php?mode=month&month=${selectedDate.getMonth()+1}&year=${selectedDate.getFullYear()}`, {
               headers: { 'Authorization': `Bearer ${token}` }
           })
           .then(res => res.json())
@@ -129,7 +131,8 @@ export function InstructorAvailability() {
   const openWeeklyModal = () => {
       setShowWeeklyModal(true);
       // Fetch current template
-      fetch(`${API_URL}/availability.php?mode=weekly&instructorId=${user?.id}`, {
+      // Do not send instructorId if logged in as instructor (let backend resolve it from token)
+      fetch(`${API_URL}/availability.php?mode=weekly`, {
           headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.json())
@@ -150,13 +153,18 @@ export function InstructorAvailability() {
   };
 
   const handleSaveWeekly = async () => {
+      // Send object with days key to ensure backend parses it correctly
+      const payload = {
+          days: weeklyTemplate
+      };
+
       const res = await fetch(`${API_URL}/availability.php?mode=weekly`, {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(weeklyTemplate)
+          body: JSON.stringify(payload)
       });
 
       if (res.ok) {

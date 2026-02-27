@@ -32,7 +32,18 @@ export function TenantSettings() {
         })
         .then(res => res.json())
         .then(data => {
-            if (data.name) setSettings(data);
+            // Ensure fields are not null for controlled inputs
+            const safeSettings = {
+                ...settings,
+                ...data,
+                contact_email: data.contact_email || '',
+                contact_phone: data.contact_phone || '',
+                contact_address: data.contact_address || '',
+                welcome_message: data.welcome_message || '',
+                primary_color: data.primary_color || '#2563EB',
+                secondary_color: data.secondary_color || '#1E40AF'
+            };
+            if (data.name) setSettings(safeSettings);
         })
         .catch(err => console.error(err))
         .finally(() => setLoading(false));

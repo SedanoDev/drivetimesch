@@ -43,9 +43,8 @@ try {
              $month = $_GET['month'] ?? date('m');
              $year = $_GET['year'] ?? date('Y');
 
-             // Simple logic: return all days in month as available for now
-             // Or better: check days with at least one free slot
-             $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+             // Use robust calculation for days in month without needing 'calendar' extension
+             $daysInMonth = (int)date('t', strtotime("$year-$month-01"));
              $availableDays = range(1, $daysInMonth);
 
              echo json_encode(['available_days' => $availableDays]);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Trash2, UserPlus, AlertCircle } from 'lucide-react';
+import { Modal } from '../../components/ui/Modal';
+import { Trash2, UserPlus, AlertCircle, Shield, User as UserIcon, GraduationCap } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -19,7 +20,7 @@ export function UsersManager() {
   const [error, setError] = useState('');
 
   // New User Form
-  const [showForm, setShowForm] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const [newUser, setNewUser] = useState({
       full_name: '',
       email: '',
@@ -57,7 +58,7 @@ export function UsersManager() {
           });
 
           if (res.ok) {
-              setShowForm(false);
+              setShowCreate(false);
               setNewUser({ full_name: '', email: '', role: 'student' });
               fetchUsers();
               alert('Usuario creado con contraseña por defecto: 123456');
@@ -89,15 +90,33 @@ export function UsersManager() {
       }
   };
 
+  const getRoleIcon = (role: string) => {
+      switch(role) {
+          case 'admin': return <Shield size={16} />;
+          case 'instructor': return <UserIcon size={16} />;
+          case 'student': return <GraduationCap size={16} />;
+          default: return <UserIcon size={16} />;
+      }
+  };
+
+  const getRoleLabel = (role: string) => {
+      switch(role) {
+          case 'admin': return 'Administrador';
+          case 'instructor': return 'Instructor';
+          case 'student': return 'Alumno';
+          default: return role;
+      }
+  };
+
   if (loading) return <div className="p-8 text-center text-slate-500">Cargando usuarios...</div>;
 
   return (
-    <div className="space-y-6">
-        <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-slate-800">Gestión de Usuarios</h1>
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mt-6">
+        <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-slate-800">Gestión de Usuarios</h2>
             <button
-                onClick={() => setShowForm(!showForm)}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors"
+                onClick={() => setShowCreate(true)}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors font-bold shadow-sm"
             >
                 <UserPlus size={18} />
                 Nuevo Usuario
@@ -105,104 +124,98 @@ export function UsersManager() {
         </div>
 
         {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-2">
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-center gap-2 mb-4">
                 <AlertCircle size={20} />
                 {error}
             </div>
         )}
 
-        {showForm && (
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 animate-in slide-in-from-top-4">
-                <h3 className="font-bold text-slate-800 mb-4">Crear Nuevo Usuario</h3>
-                <form onSubmit={handleCreate} className="grid md:grid-cols-4 gap-4 items-end">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-1">Nombre Completo</label>
-                        <input
-                            required
-                            className="w-full p-2 rounded-lg border border-slate-300"
-                            value={newUser.full_name}
-                            onChange={e => setNewUser({...newUser, full_name: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
-                        <input
-                            required
-                            type="email"
-                            className="w-full p-2 rounded-lg border border-slate-300"
-                            value={newUser.email}
-                            onChange={e => setNewUser({...newUser, email: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-1">Rol</label>
-                        <select
-                            className="w-full p-2 rounded-lg border border-slate-300 bg-white"
-                            value={newUser.role}
-                            onChange={e => setNewUser({...newUser, role: e.target.value as any})}
-                        >
-                            <option value="student">Alumno</option>
-                            <option value="instructor">Instructor</option>
-                            <option value="admin">Administrador</option>
-                        </select>
-                    </div>
-                    <div className="flex gap-2">
-                        <button type="submit" className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-medium">
-                            Guardar
-                        </button>
-                        <button type="button" onClick={() => setShowForm(false)} className="bg-slate-200 text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-300">
-                            Cancelar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        )}
+        <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Crear Nuevo Usuario">
+            <form onSubmit={handleCreate} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
+                    <input
+                        required
+                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        value={newUser.full_name}
+                        onChange={e => setNewUser({...newUser, full_name: e.target.value})}
+                        placeholder="Ej: Juan Pérez"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                    <input
+                        required
+                        type="email"
+                        className="w-full p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                        value={newUser.email}
+                        onChange={e => setNewUser({...newUser, email: e.target.value})}
+                        placeholder="juan@ejemplo.com"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Rol</label>
+                    <select
+                        className="w-full p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        value={newUser.role}
+                        onChange={e => setNewUser({...newUser, role: e.target.value as any})}
+                    >
+                        <option value="student">Alumno</option>
+                        <option value="instructor">Instructor</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-xl text-xs text-blue-700 font-medium">
+                    ℹ️ Se creará un usuario con la contraseña por defecto: <strong>123456</strong>.
+                </div>
+                <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setShowCreate(false)} className="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl hover:bg-slate-200 font-medium transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 font-bold transition-colors">
+                        Crear Usuario
+                    </button>
+                </div>
+            </form>
+        </Modal>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[600px]">
-                    <thead className="bg-slate-50 border-b border-slate-100">
-                        <tr>
-                            <th className="p-4 font-bold text-slate-600 text-sm">Nombre</th>
-                            <th className="p-4 font-bold text-slate-600 text-sm">Email</th>
-                            <th className="p-4 font-bold text-slate-600 text-sm">Rol</th>
-                            <th className="p-4 font-bold text-slate-600 text-sm text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                        {users.map(user => (
-                            <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="p-4 font-medium text-slate-800">{user.full_name}</td>
-                                <td className="p-4 text-slate-500">{user.email}</td>
-                                <td className="p-4">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                        ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                                        user.role === 'instructor' ? 'bg-blue-100 text-blue-700' :
-                                        'bg-green-100 text-green-700'}`}>
-                                        {user.role}
-                                    </span>
-                                </td>
-                                <td className="p-4 text-right">
-                                    <button
-                                        onClick={() => handleDelete(user.id)}
-                                        className="text-slate-400 hover:text-red-500 transition-colors p-1"
-                                        title="Eliminar usuario"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                        {users.length === 0 && (
-                            <tr>
-                                <td colSpan={4} className="p-8 text-center text-slate-400 italic">
-                                    No hay usuarios registrados.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+        <div className="grid grid-cols-1 gap-3">
+            {users.map(user => (
+                <div key={user.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors group">
+                    <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-sm
+                            ${user.role === 'admin' ? 'bg-purple-100 text-purple-600' :
+                              user.role === 'instructor' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                            {user.full_name.charAt(0)}
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800">{user.full_name}</h3>
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                                <span>{user.email}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span className={`flex items-center gap-1 text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full
+                                    ${user.role === 'admin' ? 'bg-purple-50 text-purple-600' :
+                                      user.role === 'instructor' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'}`}>
+                                    {getRoleIcon(user.role)} {getRoleLabel(user.role)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => handleDelete(user.id)}
+                        className="text-slate-300 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        title="Eliminar usuario"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                </div>
+            ))}
+            {users.length === 0 && (
+                <div className="text-center py-12 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    No hay usuarios registrados.
+                </div>
+            )}
         </div>
     </div>
   );

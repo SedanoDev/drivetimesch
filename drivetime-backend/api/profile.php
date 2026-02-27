@@ -1,76 +1,64 @@
 <?php
+// api/profile.php
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/auth/jwt_helper.php';
 
-// Auth Middleware
-if (!isset($jwt_secret_key)) { http_response_code(500); exit; }
+use DriveTime\Database;
+use DriveTime\Services\AuthService;
+
 $headers = getallheaders();
-$authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
+$authHeader = $headers['Authorization'] ?? '';
 $user = null;
 
-if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-    $token = $matches[1];
-    $decoded = JWT::decode($token, $jwt_secret_key);
-    if ($decoded) $user = $decoded;
-}
-
-if (!$user) {
+try {
+    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $authService = new AuthService();
+        $user = $authService->validateToken($matches[1]);
+    } else {
+        throw new Exception("Token required");
+    }
+} catch (Exception $e) {
     http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
+    echo json_encode(['error' => $e->getMessage()]);
     exit;
 }
 
-// --- GET Profile ---
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    try {
-        $stmt = $pdo->prepare("SELECT email, full_name, created_at, role FROM users WHERE id = ?");
+try {
+    $pdo = Database::getConnection();
+
+    // GET Profile
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $stmt = $pdo->prepare("SELECT id, email, full_name, role, created_at FROM users WHERE id = ?");
         $stmt->execute([$user['sub']]);
-        $profile = $stmt->fetch();
-
-        // Don't send password hash
-        echo json_encode($profile);
-    } catch (\PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
-    }
-    exit;
-}
-
-// --- PUT Profile ---
-if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    $input = json_decode(file_get_contents('php://input'), true);
-
-    // Only allow name and password changes
-    $fullName = $input['full_name'] ?? null;
-    $password = $input['password'] ?? null;
-
-    if (!$fullName) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Name required']);
-        exit;
+        echo json_encode($stmt->fetch());
     }
 
-    try {
-        if ($password && strlen($password) >= 6) {
-            $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE users SET full_name = ?, password_hash = ? WHERE id = ?");
-            $stmt->execute([$fullName, $hash, $user['sub']]);
-        } else {
-            $stmt = $pdo->prepare("UPDATE users SET full_name = ? WHERE id = ?");
-            $stmt->execute([$fullName, $user['sub']]);
+    // PUT Update Profile
+    elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        $fields = [];
+        $params = [];
+
+        if (!empty($input['full_name'])) {
+            $fields[] = "full_name = ?";
+            $params[] = $input['full_name'];
         }
 
-        // If instructor, also update instructors table name
-        if ($user['role'] === 'instructor') {
-             $stmtInst = $pdo->prepare("UPDATE instructors SET name = ? WHERE user_id = ?");
-             $stmtInst->execute([$fullName, $user['sub']]);
+        if (!empty($input['password'])) {
+            $fields[] = "password_hash = ?";
+            $params[] = password_hash($input['password'], PASSWORD_DEFAULT);
         }
 
-        http_response_code(200);
-        echo json_encode(['message' => 'Profile updated']);
-    } catch (\PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
+        if (!empty($fields)) {
+            $sql = "UPDATE users SET " . implode(', ', $fields) . " WHERE id = ?";
+            $params[] = $user['sub'];
+            $pdo->prepare($sql)->execute($params);
+        }
+
+        echo json_encode(['message'=>'Profile updated']);
     }
-    exit;
+
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }

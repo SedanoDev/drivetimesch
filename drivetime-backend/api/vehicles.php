@@ -1,97 +1,69 @@
 <?php
+// api/vehicles.php
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/auth/jwt_helper.php';
 
-// Disable display errors to prevent JSON corruption
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
+use DriveTime\Database;
+use DriveTime\Services\AuthService;
 
-// Auth Middleware
-if (!isset($jwt_secret_key)) { http_response_code(500); exit; }
+// Auth Check
 $headers = getallheaders();
-$authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
+$authHeader = $headers['Authorization'] ?? '';
 $user = null;
 
-if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-    $token = $matches[1];
-    $decoded = JWT::decode($token, $jwt_secret_key);
-    if (is_array($decoded)) {
-        $user = $decoded;
-    } elseif (is_object($decoded)) {
-        $user = (array)$decoded;
+try {
+    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $authService = new AuthService();
+        $user = $authService->validateToken($matches[1]);
+    } else {
+        throw new Exception("Token required");
     }
-}
-
-if (!$user || ($user['role'] !== 'admin' && $user['role'] !== 'superadmin')) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Unauthorized']);
+} catch (Exception $e) {
+    http_response_code(401);
+    echo json_encode(['error' => $e->getMessage()]);
     exit;
 }
 
-// --- GET: List Vehicles ---
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    try {
-        $sql = "
-            SELECT v.*, i.name as instructor_name
-            FROM vehicles v
-            LEFT JOIN instructors i ON v.id = i.vehicle_id
-            WHERE v.tenant_id = ?
-        ";
-        $stmt = $pdo->prepare($sql);
+try {
+    $pdo = Database::getConnection();
+
+    // GET: List Vehicles
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $stmt = $pdo->prepare("SELECT * FROM vehicles WHERE tenant_id = ?");
         $stmt->execute([$user['tenant_id']]);
         echo json_encode($stmt->fetchAll());
-    } catch (\PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
-    }
-    exit;
-}
-
-// --- POST: Create Vehicle ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-
-    if (empty($input['make']) || empty($input['model']) || empty($input['plate'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Missing fields']);
-        exit;
     }
 
-    try {
-        $sql = "INSERT INTO vehicles (id, tenant_id, make, model, plate, status) VALUES (UUID(), ?, ?, ?, ?, ?)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $user['tenant_id'],
-            $input['make'],
-            $input['model'],
-            $input['plate'],
-            $input['status'] ?? 'active'
-        ]);
+    // POST: Add Vehicle (Admin)
+    elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($user['role'] !== 'admin' && $user['role'] !== 'superadmin') {
+            http_response_code(403); exit;
+        }
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (empty($input['brand']) || empty($input['model']) || empty($input['plate'])) {
+             http_response_code(400); echo json_encode(['error'=>'Missing fields']); exit;
+        }
 
+        $id = Database::generateUuid();
+        $stmt = $pdo->prepare("INSERT INTO vehicles (id, tenant_id, brand, model, plate, status) VALUES (?, ?, ?, ?, ?, 'active')");
+        $stmt->execute([$id, $user['tenant_id'], $input['brand'], $input['model'], $input['plate']]);
         http_response_code(201);
-        echo json_encode(['message' => 'Vehicle created']);
-    } catch (\PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
-    }
-    exit;
-}
-
-// --- DELETE: Remove Vehicle ---
-if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-    $id = $_GET['id'] ?? null;
-    if (!$id) {
-        http_response_code(400);
-        exit;
+        echo json_encode(['message'=>'Vehicle added']);
     }
 
-    try {
+    // DELETE: Remove Vehicle
+    elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+        if ($user['role'] !== 'admin' && $user['role'] !== 'superadmin') {
+            http_response_code(403); exit;
+        }
+        $id = $_GET['id'] ?? null;
+        if (!$id) { http_response_code(400); exit; }
+
         $stmt = $pdo->prepare("DELETE FROM vehicles WHERE id = ? AND tenant_id = ?");
         $stmt->execute([$id, $user['tenant_id']]);
-        echo json_encode(['message' => 'Vehicle deleted']);
-    } catch (\PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
+        echo json_encode(['message'=>'Vehicle deleted']);
     }
-    exit;
+
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }

@@ -1,83 +1,81 @@
 <?php
+// api/dashboard.php
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/auth/jwt_helper.php';
 
-// Ensure secret key is available
-if (!isset($jwt_secret_key)) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Server configuration error']);
-    exit;
-}
+use DriveTime\Database;
+use DriveTime\Services\AuthService;
 
-// Auth Middleware
 $headers = getallheaders();
-$authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
+$authHeader = $headers['Authorization'] ?? '';
+$user = null;
 
-if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-    $token = $matches[1];
-    $decoded = JWT::decode($token, $jwt_secret_key);
-    if (!$decoded) {
-        http_response_code(401);
-        echo json_encode(['error' => 'Invalid Token']);
-        exit;
+try {
+    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $authService = new AuthService();
+        $user = $authService->validateToken($matches[1]);
+    } else {
+        throw new Exception("Token required");
     }
-    $user = $decoded;
-} else {
+} catch (Exception $e) {
     http_response_code(401);
-    echo json_encode(['error' => 'Token required']);
-    exit;
-}
-
-// Only Admin
-if ($user['role'] !== 'admin' && $user['role'] !== 'superadmin') {
-    http_response_code(403);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
+    echo json_encode(['error' => $e->getMessage()]);
     exit;
 }
 
 try {
+    $pdo = Database::getConnection();
+
+    // Stats for Dashboard
     $stats = [];
 
-    // 1. Bookings Today
-    $today = date('Y-m-d');
-    $stmtToday = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE tenant_id = ? AND booking_date = ?");
-    $stmtToday->execute([$user['tenant_id'], $today]);
-    $stats['bookings_today'] = $stmtToday->fetchColumn();
+    if ($user['role'] === 'admin' || $user['role'] === 'superadmin') {
+        // Total Students
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND role = 'student'");
+        $stmt->execute([$user['tenant_id']]);
+        $stats['total_students'] = (int)$stmt->fetchColumn();
 
-    // 2. Pending Bookings
-    $stmtPending = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE tenant_id = ? AND status = 'pending'");
-    $stmtPending->execute([$user['tenant_id']]);
-    $stats['bookings_pending'] = $stmtPending->fetchColumn();
+        // Total Instructors
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE tenant_id = ? AND role = 'instructor'");
+        $stmt->execute([$user['tenant_id']]);
+        $stats['total_instructors'] = (int)$stmt->fetchColumn();
 
-    // 3. Top Instructor (Most Bookings)
-    $stmtTop = $pdo->prepare("
-        SELECT i.name, COUNT(b.id) as count
-        FROM bookings b
-        JOIN instructors i ON b.instructor_id = i.id
-        WHERE b.tenant_id = ?
-        GROUP BY i.id
-        ORDER BY count DESC
-        LIMIT 1
-    ");
-    $stmtTop->execute([$user['tenant_id']]);
-    $topInstructor = $stmtTop->fetch(PDO::FETCH_ASSOC);
-    $stats['top_instructor'] = $topInstructor ? $topInstructor['name'] : 'N/A';
+        // Pending Bookings
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE tenant_id = ? AND status = 'pending'");
+        $stmt->execute([$user['tenant_id']]);
+        $stats['pending_bookings'] = (int)$stmt->fetchColumn();
 
-    // 4. Revenue (Total Confirmed Bookings * 25€)
-    // Assume 25€ per class for now
-    $stmtRev = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE tenant_id = ? AND status = 'confirmed'");
-    $stmtRev->execute([$user['tenant_id']]);
-    $confirmed = $stmtRev->fetchColumn();
-    $stats['total_revenue'] = $confirmed * 25;
+        // Revenue (Mock or based on packs sold)
+        $stats['monthly_revenue'] = 0; // Implement if needed
+    }
+    elseif ($user['role'] === 'instructor') {
+         // Get instructor ID
+         $instIdStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
+         $instIdStmt->execute([$user['sub']]);
+         $instId = $instIdStmt->fetchColumn();
+
+         if ($instId) {
+             $stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE instructor_id = ? AND status = 'pending'");
+             $stmt->execute([$instId]);
+             $stats['pending_requests'] = (int)$stmt->fetchColumn();
+
+             $stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE instructor_id = ? AND status = 'confirmed' AND booking_date >= CURDATE()");
+             $stmt->execute([$instId]);
+             $stats['upcoming_classes'] = (int)$stmt->fetchColumn();
+         }
+    }
+    elseif ($user['role'] === 'student') {
+        $stmt = $pdo->prepare("SELECT SUM(remaining_classes) FROM student_packs WHERE student_id = ? AND remaining_classes > 0 AND (expiration_date IS NULL OR expiration_date >= CURDATE())");
+        $stmt->execute([$user['sub']]);
+        $stats['credits'] = (int)$stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE student_id = ? AND status = 'confirmed' AND booking_date >= CURDATE()");
+        $stmt->execute([$user['sub']]);
+        $stats['upcoming_classes'] = (int)$stmt->fetchColumn();
+    }
 
     echo json_encode($stats);
 
-} catch (\PDOException $e) {
+} catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }

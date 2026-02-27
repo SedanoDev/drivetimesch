@@ -1,85 +1,64 @@
 <?php
+// api/tenant_settings.php
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/auth/jwt_helper.php';
 
-if (!isset($jwt_secret_key)) { http_response_code(500); exit; }
+use DriveTime\Database;
+use DriveTime\Services\AuthService;
+
 $headers = getallheaders();
-$authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
+$authHeader = $headers['Authorization'] ?? '';
 $user = null;
 
-if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-    $token = $matches[1];
-    $decoded = JWT::decode($token, $jwt_secret_key);
-    if ($decoded) $user = $decoded;
-}
-
-if (!$user || ($user['role'] !== 'admin' && $user['role'] !== 'superadmin')) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Unauthorized']);
+try {
+    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $authService = new AuthService();
+        $user = $authService->validateToken($matches[1]);
+    } else {
+        throw new Exception("Token required");
+    }
+} catch (Exception $e) {
+    http_response_code(401);
+    echo json_encode(['error' => $e->getMessage()]);
     exit;
 }
 
-// GET Settings
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    try {
+try {
+    $pdo = Database::getConnection();
+
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $stmt = $pdo->prepare("SELECT * FROM tenants WHERE id = ?");
         $stmt->execute([$user['tenant_id']]);
-        echo json_encode($stmt->fetch());
-    } catch (\PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
+        echo json_encode($stmt->fetch() ?: []);
     }
-    exit;
-}
+    elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($user['role'] !== 'admin' && $user['role'] !== 'superadmin') {
+            http_response_code(403); exit;
+        }
+        $input = json_decode(file_get_contents('php://input'), true);
 
-// PUT Update Settings
-if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    $input = json_decode(file_get_contents('php://input'), true);
+        // Dynamic update based on input keys (safe for settings)
+        // For simplicity, just update common fields
+        $fields = ['name', 'logo_url', 'primary_color', 'secondary_color', 'contact_email', 'contact_phone', 'address'];
+        $updates = [];
+        $params = [];
 
-    if (empty($input['name'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Name required']);
-        exit;
+        foreach ($fields as $f) {
+            if (isset($input[$f])) {
+                $updates[] = "$f = ?";
+                $params[] = $input[$f];
+            }
+        }
+
+        if (!empty($updates)) {
+            $sql = "UPDATE tenants SET " . implode(', ', $updates) . " WHERE id = ?";
+            $params[] = $user['tenant_id'];
+            $pdo->prepare($sql)->execute($params);
+        }
+
+        echo json_encode(['message'=>'Settings updated']);
     }
 
-    try {
-        $sql = "UPDATE tenants SET
-            name = ?,
-            contact_email = ?,
-            contact_phone = ?,
-            contact_address = ?,
-            primary_color = ?,
-            secondary_color = ?,
-            class_price = ?,
-            class_duration_minutes = ?,
-            min_booking_notice_hours = ?,
-            min_cancellation_notice_hours = ?,
-            min_practice_hours_required = ?,
-            welcome_message = ?
-            WHERE id = ?";
-
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $input['name'],
-            $input['contact_email'] ?? '',
-            $input['contact_phone'] ?? '',
-            $input['contact_address'] ?? '',
-            $input['primary_color'] ?? '#2563EB',
-            $input['secondary_color'] ?? '#1E40AF',
-            $input['class_price'] ?? 30.00,
-            $input['class_duration_minutes'] ?? 60,
-            $input['min_booking_notice_hours'] ?? 24,
-            $input['min_cancellation_notice_hours'] ?? 24,
-            $input['min_practice_hours_required'] ?? 20,
-            $input['welcome_message'] ?? '',
-            $user['tenant_id']
-        ]);
-
-        http_response_code(200);
-        echo json_encode(['message' => 'Settings updated']);
-    } catch (\PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
-    }
-    exit;
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }

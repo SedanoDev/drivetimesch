@@ -1,60 +1,60 @@
 <?php
+// api/instructor_students.php
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/auth/jwt_helper.php';
 
-// Auth Middleware
-if (!isset($jwt_secret_key)) { http_response_code(500); exit; }
+use DriveTime\Database;
+use DriveTime\Services\AuthService;
+
 $headers = getallheaders();
-$authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
+$authHeader = $headers['Authorization'] ?? '';
 $user = null;
 
-if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-    $token = $matches[1];
-    $decoded = JWT::decode($token, $jwt_secret_key);
-    if ($decoded) $user = $decoded;
-}
-
-if (!$user || $user['role'] !== 'instructor') {
-    http_response_code(403);
-    echo json_encode(['error' => 'Unauthorized']);
+try {
+    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $authService = new AuthService();
+        $user = $authService->validateToken($matches[1]);
+    } else {
+        throw new Exception("Token required");
+    }
+} catch (Exception $e) {
+    http_response_code(401);
+    echo json_encode(['error' => $e->getMessage()]);
     exit;
 }
 
-// --- GET: List Students ---
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    try {
-        // First get instructor ID
-        $instStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
-        $instStmt->execute([$user['sub']]);
-        $instructorId = $instStmt->fetchColumn();
+try {
+    $pdo = Database::getConnection();
 
-        if (!$instructorId) {
-            echo json_encode([]);
-            exit;
+    // GET: List Students for Instructor (based on bookings)
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        if ($user['role'] !== 'instructor' && $user['role'] !== 'admin' && $user['role'] !== 'superadmin') {
+            http_response_code(403); exit;
         }
 
-        // Fetch students - FIX: Use subquery or GROUP BY to handle aggregate
-        // The previous query might fail on strict SQL mode if not grouped properly
-        $sql = "
-            SELECT
-                u.id,
-                u.full_name,
-                u.email,
-                COUNT(b.id) as total_classes,
-                MAX(b.booking_date) as last_class
-            FROM bookings b
-            JOIN users u ON b.student_id = u.id
-            WHERE b.instructor_id = ?
-            GROUP BY u.id, u.full_name, u.email
-            ORDER BY last_class DESC
-        ";
+        $sql = "SELECT DISTINCT u.id, u.full_name, u.email,
+                (SELECT COUNT(*) FROM bookings b WHERE b.student_id = u.id AND b.status = 'completed') as completed_classes
+                FROM users u
+                JOIN bookings bk ON u.id = bk.student_id
+                WHERE bk.tenant_id = ?";
+
+        $params = [$user['tenant_id']];
+
+        if ($user['role'] === 'instructor') {
+             $instIdStmt = $pdo->prepare("SELECT id FROM instructors WHERE user_id = ?");
+             $instIdStmt->execute([$user['sub']]);
+             $instId = $instIdStmt->fetchColumn();
+             if ($instId) {
+                 $sql .= " AND bk.instructor_id = ?";
+                 $params[] = $instId;
+             }
+        }
 
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$instructorId]);
+        $stmt->execute($params);
         echo json_encode($stmt->fetchAll());
-    } catch (\PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => $e->getMessage()]);
     }
-    exit;
+
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
 }

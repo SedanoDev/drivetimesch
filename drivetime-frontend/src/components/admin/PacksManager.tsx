@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Package, Plus, Trash2, Tag, AlertCircle } from 'lucide-react';
+import { Package, Plus, Trash2, Tag, AlertCircle, Edit2 } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface Pack {
     id: string;
@@ -42,37 +42,42 @@ export function PacksManager() {
   const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-          // Note: Backend might not support PUT yet for packs, let's assume create only or update backend later
-          // User asked for "add vehicle/packs UI is poor", but edit is usually expected.
-          // I'll stick to create for now to ensure stability, or assume I will add PUT to backend if needed.
-          // Actually, I only added POST/DELETE to packs.php. I will update packs.php next if needed.
-          // For now, let's support Create properly.
-
-          if (editingId) {
-              alert("Edición no implementada aún.");
-              return;
-          }
+          const method = editingId ? 'PUT' : 'POST';
+          const body: any = { ...packForm };
+          if (editingId) body.id = editingId;
 
           const res = await fetch(`${API_URL}/packs.php`, {
-              method: 'POST',
+              method,
               headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${token}`
               },
-              body: JSON.stringify(packForm)
+              body: JSON.stringify(body)
           });
 
           if (res.ok) {
               setShowForm(false);
+              setEditingId(null);
               setPackForm({ name: '', classes_count: 5, price: 0, discount_percentage: 0 });
               fetchPacks();
           } else {
               const data = await res.json();
-              alert(data.error || 'Error al crear');
+              alert(data.error || 'Error al guardar');
           }
       } catch (err) {
           alert('Error de conexión');
       }
+  };
+
+  const handleEdit = (p: Pack) => {
+      setPackForm({
+          name: p.name,
+          classes_count: p.classes_count,
+          price: p.price,
+          discount_percentage: p.discount_percentage || 0
+      });
+      setEditingId(p.id);
+      setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -98,7 +103,7 @@ export function PacksManager() {
             <h1 className="text-2xl font-bold text-slate-800">Bonos de Clases</h1>
             <button
                 onClick={openCreate}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-sm font-bold"
             >
                 <Plus size={18} /> Crear Bono
             </button>
@@ -110,7 +115,7 @@ export function PacksManager() {
             </div>
         )}
 
-        <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Nuevo Bono">
+        <Modal isOpen={showForm} onClose={() => setShowForm(false)} title={editingId ? "Editar Bono" : "Nuevo Bono"}>
             <form onSubmit={handleSave} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Nombre del Pack</label>
@@ -157,7 +162,7 @@ export function PacksManager() {
                 </div>
                 <div className="pt-4 flex gap-3">
                     <button type="button" onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 font-medium transition-colors">Cancelar</button>
-                    <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold transition-colors">Crear Bono</button>
+                    <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold transition-colors">Guardar</button>
                 </div>
             </form>
         </Modal>
@@ -165,11 +170,17 @@ export function PacksManager() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {packs.map(p => (
                 <div key={p.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative group hover:shadow-md transition-all">
-                    <button onClick={() => handleDelete(p.id)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2 bg-white/80 rounded-full">
-                        <Trash2 size={18} />
-                    </button>
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all bg-white/80 p-1 rounded-full backdrop-blur-sm">
+                        <button onClick={() => handleEdit(p)} className="text-slate-400 hover:text-blue-500 p-1.5 rounded-full hover:bg-blue-50 transition-colors">
+                            <Edit2 size={18} />
+                        </button>
+                        <button onClick={() => handleDelete(p.id)} className="text-slate-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors">
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
+
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center transform -rotate-6">
+                        <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center transform -rotate-6 shadow-sm border border-purple-100">
                             <Package size={28} />
                         </div>
                         <div>

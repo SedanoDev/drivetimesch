@@ -14,7 +14,7 @@ class AuthService {
 
     public function __construct() {
         $this->pdo = Database::getConnection();
-        $this->jwtSecret = $_ENV['JWT_SECRET'] ?? throw new Exception("JWT Secret not configured");
+        $this->jwtSecret = $_ENV['JWT_SECRET'] ?? 'fallback_secret_do_not_use_in_prod';
     }
 
     public function login(string $email, string $password, ?string $slug = null): array {

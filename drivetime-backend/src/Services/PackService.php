@@ -71,4 +71,58 @@ class PackService {
             throw $e;
         }
     }
+
+    public function getAllPacks(string $tenantId, bool $activeOnly = true): array {
+        $sql = "SELECT * FROM class_packs WHERE tenant_id = ?";
+        if ($activeOnly) {
+            $sql .= " AND is_active = 1";
+        }
+        $sql .= " ORDER BY price ASC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$tenantId]);
+        return $stmt->fetchAll();
+    }
+
+    public function createPack(string $tenantId, array $data): void {
+        if (empty($data['name']) || empty($data['classes_count']) || empty($data['price'])) {
+             throw new Exception("Missing fields", 400);
+        }
+
+        $id = Database::generateUuid();
+        $stmt = $this->pdo->prepare("INSERT INTO class_packs (id, tenant_id, name, classes_count, price, discount_percentage) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $id,
+            $tenantId,
+            $data['name'],
+            $data['classes_count'],
+            $data['price'],
+            $data['discount_percentage'] ?? 0
+        ]);
+    }
+
+    public function updatePack(string $tenantId, string $packId, array $data): void {
+        $fields = [];
+        $params = [];
+
+        if (isset($data['name'])) { $fields[] = "name = ?"; $params[] = $data['name']; }
+        if (isset($data['classes_count'])) { $fields[] = "classes_count = ?"; $params[] = $data['classes_count']; }
+        if (isset($data['price'])) { $fields[] = "price = ?"; $params[] = $data['price']; }
+        if (isset($data['discount_percentage'])) { $fields[] = "discount_percentage = ?"; $params[] = $data['discount_percentage']; }
+        if (isset($data['is_active'])) { $fields[] = "is_active = ?"; $params[] = $data['is_active'] ? 1 : 0; }
+
+        if (empty($fields)) {
+            throw new Exception("No fields to update", 400);
+        }
+
+        $sql = "UPDATE class_packs SET " . implode(', ', $fields) . " WHERE id = ? AND tenant_id = ?";
+        $params[] = $packId;
+        $params[] = $tenantId;
+
+        $this->pdo->prepare($sql)->execute($params);
+    }
+
+    public function deletePack(string $tenantId, string $packId): void {
+        $stmt = $this->pdo->prepare("DELETE FROM class_packs WHERE id = ? AND tenant_id = ?");
+        $stmt->execute([$packId, $tenantId]);
+    }
 }

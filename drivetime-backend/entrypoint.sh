@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Do not exit on error (set -e) to allow container to stay up for debugging if install fails
 
 echo "🚀 Starting backend container entrypoint..."
 
@@ -10,7 +10,10 @@ cd /var/www/html
 if [ ! -f "vendor/autoload.php" ]; then
     echo "📦 Vendor autoload missing. Running composer install..."
     # We use --no-interaction to avoid prompts, --verbose to see output in docker logs
-    composer install --no-interaction --prefer-dist --optimize-autoloader --verbose
+    if ! composer install --no-interaction --prefer-dist --optimize-autoloader --verbose; then
+         echo "🚨 CRITICAL: Could not install backend dependencies."
+         echo "Please try running: docker-compose exec backend composer install"
+    fi
 else
     echo "✅ Vendor directory (autoload.php) found."
     # Optional: Run dump-autoload to ensure everything is fresh

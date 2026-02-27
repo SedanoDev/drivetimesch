@@ -9,15 +9,15 @@ export async function createBooking(booking: {
     instructor_id: string;
     booking_date: string;
     start_time: string;
-}): Promise<boolean> {
+}): Promise<{ success: boolean; error?: string }> {
     try {
         await apiFetch('/bookings.php', {
             method: 'POST',
             body: JSON.stringify(booking),
         });
-        return true;
-    } catch (error) {
+        return { success: true };
+    } catch (error: any) {
         console.error("Booking failed:", error);
-        return false;
+        return { success: false, error: error.message || 'Error desconocido' };
     }
 }

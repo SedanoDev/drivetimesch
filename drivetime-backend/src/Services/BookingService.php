@@ -86,23 +86,25 @@ class BookingService {
             }
 
             // 3. Deduct Credit (Lock Row)
-            $today = date('Y-m-d');
+            // Use CURDATE() to align with PackService check and avoid timezone mismatches
             $creditStmt = $this->pdo->prepare("
                 SELECT id
                 FROM student_packs
                 WHERE student_id = ?
                 AND tenant_id = ?
                 AND remaining_classes > 0
-                AND (expiration_date IS NULL OR expiration_date >= ?)
+                AND (expiration_date IS NULL OR expiration_date >= CURDATE())
                 ORDER BY created_at ASC, id ASC
                 LIMIT 1
                 FOR UPDATE
             ");
-            $creditStmt->execute([$user['sub'], $user['tenant_id'], $today]);
+            $creditStmt->execute([$user['sub'], $user['tenant_id']]);
             $pack = $creditStmt->fetch();
 
             if (!$pack) {
-                throw new Exception("No credits available", 402);
+                // Log detailed error for debugging
+                error_log("Booking Failed: No valid credits found for User {$user['sub']} Tenant {$user['tenant_id']}");
+                throw new Exception("No tienes créditos válidos disponibles.", 402);
             }
 
             $deductStmt = $this->pdo->prepare("UPDATE student_packs SET remaining_classes = remaining_classes - 1 WHERE id = ?");

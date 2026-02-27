@@ -1,11 +1,5 @@
 FROM php:8.2-apache
 
-# Install system dependencies (Git and Unzip are required for Composer)
-RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
-
 # Install PDO MySQL extension
 RUN docker-php-ext-install pdo pdo_mysql
 

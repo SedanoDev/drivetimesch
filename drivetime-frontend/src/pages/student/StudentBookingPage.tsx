@@ -124,17 +124,17 @@ export function StudentBookingPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       setIsSubmitting(true);
-      const success = await createBooking({
+      const result = await createBooking({
           instructor_id: selectedInstructorId!,
           booking_date: selectedDate!.toISOString().split('T')[0],
           start_time: selectedTime!,
       });
 
-      if (success) {
+      if (result.success) {
         setView('success');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-         alert("Error al reservar. Verifica que tengas créditos disponibles.");
+         alert(`Error al reservar: ${result.error || 'Verifica que tengas créditos disponibles.'}`);
       }
       // Re-fetch credits in case they changed (e.g., race condition or refresh needed)
       if (token) {

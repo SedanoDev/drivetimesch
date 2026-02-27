@@ -17,6 +17,14 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     });
 
     if (!response.ok) {
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Redirect to login if unauthorized
+            if (!window.location.pathname.includes('/login')) {
+                 window.location.href = '/login';
+            }
+        }
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `Request failed with status ${response.status}`);
     }

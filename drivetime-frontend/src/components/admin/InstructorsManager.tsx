@@ -217,9 +217,6 @@ export function InstructorsManager() {
                <div>
                    <h3 className="font-bold text-slate-800">{instructor.name}</h3>
                    <div className="flex items-center gap-2 mt-1">
-                       <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border ${instructor.vehicle_type === 'Manual' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-purple-50 text-purple-600 border-purple-100'}`}>
-                           {instructor.vehicle_type || 'N/A'}
-                       </span>
                        {instructor.vehicle_id && (
                            <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100 flex items-center gap-1">
                                <Car size={10} /> Vehículo Asignado

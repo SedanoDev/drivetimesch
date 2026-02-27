@@ -9,8 +9,18 @@ $allowed_origins = [
     'http://127.0.0.1'
 ];
 
+// 1. Remove ANY existing headers set by Apache/Server config to prevent duplicates
+header_remove('Access-Control-Allow-Origin');
+header_remove('Access-Control-Allow-Methods');
+header_remove('Access-Control-Allow-Headers');
+header_remove('Access-Control-Allow-Credentials');
+
+// 2. Set dynamic headers based on origin
 if (in_array($origin, $allowed_origins)) {
     header('Access-Control-Allow-Origin: ' . $origin);
+} else {
+    // Optional: Allow * for dev if origin not in list (but Credentials won't work)
+    // header('Access-Control-Allow-Origin: *');
 }
 
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');

@@ -1,0 +1,12 @@
+
+> drivetime-frontend@0.0.0 dev /app/drivetime-frontend
+> vite
+
+
+  VITE v7.3.1  ready in 336 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+4:40:57 PM [vite] vite.config.ts changed, restarting server...
+4:40:57 PM [vite] (client) Re-optimizing dependencies because vite config has changed
+4:40:57 PM [vite] server restarted.

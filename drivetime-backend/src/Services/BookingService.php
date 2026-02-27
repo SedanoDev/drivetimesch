@@ -64,8 +64,22 @@ class BookingService {
     }
 
     public function createBooking(array $user, array $data): void {
-        if (!isset($data['instructor_id'], $data['booking_date'], $data['start_time'])) {
-            throw new Exception("Missing required fields", 400);
+        // Handle aliases for compatibility (e.g. external API usage)
+        if (!isset($data['booking_date']) && isset($data['date'])) {
+            $data['booking_date'] = $data['date'];
+        }
+        if (!isset($data['start_time']) && isset($data['time_slot'])) {
+            $data['start_time'] = $data['time_slot'];
+        }
+
+        // Detailed validation
+        $missing = [];
+        if (empty($data['instructor_id'])) $missing[] = 'instructor_id';
+        if (empty($data['booking_date'])) $missing[] = 'booking_date';
+        if (empty($data['start_time'])) $missing[] = 'start_time';
+
+        if (!empty($missing)) {
+            throw new Exception("Missing required fields: " . implode(', ', $missing), 400);
         }
 
         try {

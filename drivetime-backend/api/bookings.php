@@ -1,5 +1,8 @@
 <?php
 // api/bookings.php
+// Start output buffering to capture any unwanted output (warnings, notices, etc.)
+ob_start();
+
 require_once __DIR__ . '/../config.php';
 
 use DriveTime\Services\AuthService;
@@ -33,6 +36,8 @@ try {
             'instructor_id' => $_GET['instructor_id'] ?? null
         ];
         $bookings = $bookingService->getBookings($user, $filters);
+
+        ob_clean();
         echo json_encode($bookings);
     }
 
@@ -41,6 +46,8 @@ try {
         $input = json_decode(file_get_contents('php://input'), true);
         $bookingService->createBooking($user, $input);
         http_response_code(201);
+
+        ob_clean();
         echo json_encode(['message' => 'Booking request sent successfully']);
     }
 
@@ -50,6 +57,8 @@ try {
         if (!isset($input['id'])) throw new Exception("Missing ID");
 
         $bookingService->updateBooking($user, $input['id'], $input);
+
+        ob_clean();
         echo json_encode(['message' => 'Booking updated']);
     }
 
@@ -57,6 +66,7 @@ try {
     elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
          // Implement delete if needed, usually just status=cancelled via PUT is better
          http_response_code(405);
+         ob_clean();
          echo json_encode(['error' => 'Use PUT to cancel bookings']);
     }
 
@@ -65,6 +75,7 @@ try {
     // Map common codes
     if ($code < 100 || $code > 599) $code = 500;
 
+    ob_clean();
     http_response_code($code);
     echo json_encode(['error' => $e->getMessage()]);
 }

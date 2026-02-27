@@ -86,6 +86,7 @@ export function Calendar({
               isDisabled = true;
           }
 
+          // Allow override: If disableUnavailable is false (e.g. Instructor View), ignore isAvailable check
           if (disableUnavailable && availableDates.length > 0 && !isAvailable) {
               isDisabled = true;
           }
@@ -94,6 +95,8 @@ export function Calendar({
             <button
               key={idx}
               onClick={() => !isDisabled && onSelectDate(day)}
+              // Remove disabled attribute for logic, rely on isDisabled for styling/click prevention
+              // Actually, keep disabled but ensure props allow overriding behavior
               disabled={isDisabled}
               className={cn(
                 "h-10 w-10 rounded-xl flex items-center justify-center text-sm font-medium transition-all relative group",

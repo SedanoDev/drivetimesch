@@ -200,6 +200,7 @@ export function InstructorAvailability() {
                     availableDates={availableDates}
                     onMonthChange={(d) => setSelectedDate(d)} // Trigger refetch on nav
                     className="border-0 shadow-none w-full"
+                    disableUnavailable={false} // Allow instructors to select unavailable days to edit them
                 />
                 <div className="mt-6 flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-2">

@@ -20,6 +20,7 @@ import { StudentPayments } from './pages/student/StudentPayments';
 import { InstructorDashboard } from './pages/instructor/InstructorDashboard';
 import { InstructorAvailability } from './pages/instructor/InstructorAvailability';
 import { InstructorStudents } from './pages/instructor/InstructorStudents';
+import { InstructorPending } from './pages/instructor/InstructorPending';
 import { LandingPage } from './pages/public/LandingPage';
 import { SchoolRegister } from './pages/public/SchoolRegister';
 import { FindSchool } from './pages/public/FindSchool';
@@ -74,6 +75,7 @@ export function AppRoutes() {
       {/* Instructor Routes */}
       <Route path="/instructor" element={user?.role === 'instructor' ? <InstructorLayout /> : <Navigate to="/login" />}>
          <Route path="dashboard" element={<InstructorDashboard />} />
+         <Route path="pendientes" element={<InstructorPending />} />
          <Route path="students" element={<InstructorStudents />} />
          <Route path="availability" element={<InstructorAvailability />} />
          <Route path="evaluations" element={<div>Evaluaciones (Próximamente)</div>} />

@@ -1,7 +1,13 @@
 FROM php:8.2-apache
 
-# Install PDO MySQL extension
-RUN docker-php-ext-install pdo pdo_mysql
+# Install system dependencies (Git, Unzip, Zip Dev) and PHP extensions
+# We need git/unzip/libzip-dev for Composer to install dependencies from dist/source
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    libzip-dev \
+    && docker-php-ext-install pdo pdo_mysql zip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Enable Apache modules: rewrite and headers
 RUN a2enmod rewrite headers

@@ -71,7 +71,7 @@ try {
         }
 
         if ($mode === 'month') {
-             $month = $_GET['month'] ?? date('m');
+             $month = str_pad($_GET['month'] ?? date('m'), 2, '0', STR_PAD_LEFT);
              $year = $_GET['year'] ?? date('Y');
              $daysInMonth = (int)date('t', strtotime("$year-$month-01"));
 

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { Car, Plus, Trash2, AlertCircle, Edit2 } from 'lucide-react';
+import { Car, Plus, Trash2, AlertCircle, Edit2, User } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/drivetime-backend/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface Vehicle {
     id: string;
@@ -12,15 +12,22 @@ interface Vehicle {
     plate: string;
     status: string;
     instructor_name?: string;
+    instructor_id?: string;
+}
+
+interface Instructor {
+    id: string;
+    name: string;
 }
 
 export function VehiclesManager() {
   const { token } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [vehicleForm, setVehicleForm] = useState({ make: '', model: '', plate: '', status: 'active' });
+  const [vehicleForm, setVehicleForm] = useState({ make: '', model: '', plate: '', status: 'active', instructor_id: '' });
   const [error, setError] = useState('');
 
   const fetchVehicles = () => {
@@ -36,8 +43,22 @@ export function VehiclesManager() {
       .finally(() => setLoading(false));
   };
 
+  const fetchInstructors = () => {
+      fetch(`${API_URL}/instructors.php`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+          if (Array.isArray(data)) setInstructors(data);
+      })
+      .catch(console.error);
+  };
+
   useEffect(() => {
-      if (token) fetchVehicles();
+      if (token) {
+          fetchVehicles();
+          fetchInstructors();
+      }
   }, [token]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -59,8 +80,10 @@ export function VehiclesManager() {
           if (res.ok) {
               setShowForm(false);
               setEditingId(null);
-              setVehicleForm({ make: '', model: '', plate: '', status: 'active' });
+              setVehicleForm({ make: '', model: '', plate: '', status: 'active', instructor_id: '' });
               fetchVehicles();
+              // Re-fetch instructors to update assignments if needed (optional)
+              fetchInstructors();
           } else {
               const data = await res.json();
               alert(data.error || 'Error al guardar');
@@ -71,7 +94,13 @@ export function VehiclesManager() {
   };
 
   const handleEdit = (v: Vehicle) => {
-      setVehicleForm({ make: v.make, model: v.model, plate: v.plate, status: v.status });
+      setVehicleForm({
+          make: v.make,
+          model: v.model,
+          plate: v.plate,
+          status: v.status,
+          instructor_id: v.instructor_id || ''
+      });
       setEditingId(v.id);
       setShowForm(true);
   };
@@ -87,7 +116,7 @@ export function VehiclesManager() {
 
   const openCreate = () => {
       setEditingId(null);
-      setVehicleForm({ make: '', model: '', plate: '', status: 'active' });
+      setVehicleForm({ make: '', model: '', plate: '', status: 'active', instructor_id: '' });
       setShowForm(true);
   };
 
@@ -99,7 +128,7 @@ export function VehiclesManager() {
             <h1 className="text-2xl font-bold text-slate-800">Gestión de Flota</h1>
             <button
                 onClick={openCreate}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-sm font-bold"
             >
                 <Plus size={18} /> Añadir Vehículo
             </button>
@@ -145,17 +174,32 @@ export function VehiclesManager() {
                         required
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Estado</label>
-                    <select
-                        className="w-full p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={vehicleForm.status}
-                        onChange={e => setVehicleForm({...vehicleForm, status: e.target.value})}
-                    >
-                        <option value="active">Activo</option>
-                        <option value="maintenance">Mantenimiento</option>
-                        <option value="inactive">Inactivo</option>
-                    </select>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Estado</label>
+                        <select
+                            className="w-full p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={vehicleForm.status}
+                            onChange={e => setVehicleForm({...vehicleForm, status: e.target.value})}
+                        >
+                            <option value="active">Activo</option>
+                            <option value="maintenance">Mantenimiento</option>
+                            <option value="inactive">Inactivo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Asignar a</label>
+                        <select
+                            className="w-full p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={vehicleForm.instructor_id}
+                            onChange={e => setVehicleForm({...vehicleForm, instructor_id: e.target.value})}
+                        >
+                            <option value="">-- Sin asignar --</option>
+                            {instructors.map(inst => (
+                                <option key={inst.id} value={inst.id}>{inst.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
                 <div className="pt-4 flex gap-3">
                     <button type="button" onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 font-medium transition-colors">Cancelar</button>
@@ -167,17 +211,17 @@ export function VehiclesManager() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {vehicles.map(v => (
                 <div key={v.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative group hover:shadow-md transition-all">
-                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all bg-white/80 p-1 rounded-full">
-                        <button onClick={() => handleEdit(v)} className="text-slate-400 hover:text-blue-500 p-1">
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all bg-white/80 p-1 rounded-full backdrop-blur-sm">
+                        <button onClick={() => handleEdit(v)} className="text-slate-400 hover:text-blue-500 p-1.5 rounded-full hover:bg-blue-50 transition-colors">
                             <Edit2 size={18} />
                         </button>
-                        <button onClick={() => handleDelete(v.id)} className="text-slate-400 hover:text-red-500 p-1">
+                        <button onClick={() => handleDelete(v.id)} className="text-slate-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors">
                             <Trash2 size={18} />
                         </button>
                     </div>
 
                     <div className="flex items-center gap-4 mb-4">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${v.status === 'active' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 border-white shadow-sm ${v.status === 'active' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
                             <Car size={24} />
                         </div>
                         <div>
@@ -190,9 +234,13 @@ export function VehiclesManager() {
                             {v.status === 'active' ? 'Activo' : v.status === 'maintenance' ? 'Taller' : 'Inactivo'}
                         </span>
                         {v.instructor_name ? (
-                            <span className="text-slate-600 truncate max-w-[120px]" title={v.instructor_name}>👤 {v.instructor_name}</span>
+                            <span className="text-slate-600 flex items-center gap-1.5 truncate max-w-[140px]" title={v.instructor_name}>
+                                <User size={14} className="text-slate-400" /> {v.instructor_name}
+                            </span>
                         ) : (
-                            <span className="text-slate-400 italic text-xs">Sin asignar</span>
+                            <span className="text-slate-400 italic text-xs flex items-center gap-1">
+                                <User size={14} /> Sin asignar
+                            </span>
                         )}
                     </div>
                 </div>

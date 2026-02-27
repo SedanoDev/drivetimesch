@@ -21,7 +21,7 @@ try {
         $authService = new AuthService();
         $user = $authService->validateToken($matches[1]);
     } else {
-        throw new Exception("Token required");
+        throw new Exception("Token required", 401);
     }
 } catch (\Throwable $e) {
     ob_clean();

@@ -10,9 +10,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Support JSON or Form Data
 $input = json_decode(file_get_contents('php://input'), true);
+if (!$input) {
+    $input = $_POST;
+}
 
-if (!isset($input['email'], $input['password'])) {
+if (empty($input['email']) || empty($input['password'])) {
     http_response_code(400);
     echo json_encode(['error' => 'Missing email or password']);
     exit;

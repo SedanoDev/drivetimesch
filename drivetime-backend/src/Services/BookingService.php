@@ -65,7 +65,7 @@ class BookingService {
 
     public function createBooking(array $user, array $data): void {
         if (!isset($data['instructor_id'], $data['booking_date'], $data['start_time'])) {
-            throw new Exception("Missing required fields");
+            throw new Exception("Missing required fields", 400);
         }
 
         try {
@@ -75,14 +75,14 @@ class BookingService {
             $instStmt = $this->pdo->prepare("SELECT id, name FROM instructors WHERE id = ? AND tenant_id = ?");
             $instStmt->execute([$data['instructor_id'], $user['tenant_id']]);
             if (!$instStmt->fetch()) {
-                throw new Exception("Instructor not found");
+                throw new Exception("Instructor not found", 404);
             }
 
             // 2. Check Availability
             $checkStmt = $this->pdo->prepare("SELECT id FROM bookings WHERE instructor_id = ? AND booking_date = ? AND start_time = ? AND status != 'cancelled'");
             $checkStmt->execute([$data['instructor_id'], $data['booking_date'], $data['start_time']]);
             if ($checkStmt->fetch()) {
-                throw new Exception("Slot already booked");
+                throw new Exception("Slot already booked", 409);
             }
 
             // 3. Deduct Credit (Lock Row)

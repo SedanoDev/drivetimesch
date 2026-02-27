@@ -1,5 +1,8 @@
 <?php
 // api/student_packs.php
+// Start output buffering to capture any unwanted output (warnings, notices, etc.)
+ob_start();
+
 require_once __DIR__ . '/../config.php';
 
 use DriveTime\Services\AuthService;
@@ -34,6 +37,9 @@ try {
         }
 
         $credits = $packService->getCredits($targetId, $user['tenant_id']);
+
+        // Clean buffer before outputting JSON
+        ob_clean();
         echo json_encode(['credits' => $credits]);
     }
 
@@ -45,10 +51,15 @@ try {
         $packService->purchasePack($user, $input['pack_id'], $input['student_id'] ?? null);
 
         http_response_code(201);
+
+        // Clean buffer before outputting JSON to remove any warnings/notices
+        ob_clean();
         echo json_encode(['message' => 'Pack purchased successfully']);
     }
 
 } catch (\Throwable $e) {
+    // Ensure we clean buffer even on error so we send clean JSON error
+    ob_clean();
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }

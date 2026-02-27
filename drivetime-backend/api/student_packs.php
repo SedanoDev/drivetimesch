@@ -17,7 +17,7 @@ try {
     } else {
         throw new Exception("Token required");
     }
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     http_response_code(401);
     echo json_encode(['error' => $e->getMessage()]);
     exit;
@@ -48,7 +48,7 @@ try {
         echo json_encode(['message' => 'Pack purchased successfully']);
     }
 
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }

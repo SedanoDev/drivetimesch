@@ -5,6 +5,11 @@ require_once __DIR__ . '/../config.php';
 use DriveTime\Database;
 use DriveTime\Services\AuthService;
 
+// Prevent Caching
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // Function to generate slots between start and end time
 function generateSlots($start, $end, $duration = 60) {
     $slots = [];
@@ -68,9 +73,8 @@ try {
         if ($mode === 'month') {
              $month = $_GET['month'] ?? date('m');
              $year = $_GET['year'] ?? date('Y');
-             // Robust days in month
              $daysInMonth = (int)date('t', strtotime("$year-$month-01"));
-             $availableDays = range(1, $daysInMonth); // Todo: filter by actual availability?
+             $availableDays = range(1, $daysInMonth);
              echo json_encode(['available_days' => $availableDays]);
         }
         elseif ($mode === 'weekly') {
@@ -78,32 +82,42 @@ try {
                 http_response_code(400); echo json_encode(['error'=>'Instructor not identified']); exit;
             }
             // Fetch Standard Weekly Template
-            $stmt = $pdo->prepare("SELECT day_of_week, start_time, end_time, is_active FROM availabilities WHERE instructor_id = ?");
+            $stmt = $pdo->prepare("SELECT day_of_week as day, start_time as start, end_time as end, is_active as active FROM availabilities WHERE instructor_id = ?");
             $stmt->execute([$instructorId]);
-            echo json_encode($stmt->fetchAll());
+            $results = $stmt->fetchAll();
+
+            // Cast boolean/numbers for frontend compatibility
+            foreach ($results as &$row) {
+                $row['day'] = (int)$row['day'];
+                $row['active'] = (bool)$row['active'];
+                $row['start'] = substr($row['start'], 0, 5);
+                $row['end'] = substr($row['end'], 0, 5);
+            }
+            echo json_encode($results);
         }
         else {
-             // Mode: Details (Specific Date Slots for Booking or Editing)
+             // Mode: Details or Public Slots
              if (!$date || !$instructorId) {
                  if ($mode === 'details' && !$date) { http_response_code(400); echo json_encode(['error'=>'Missing date']); exit; }
                  if (!$instructorId) { http_response_code(400); echo json_encode(['error'=>'Missing instructor']); exit; }
              }
 
-             // 1. Determine Base Schedule (Start/End) for this date
+             // 1. Determine Base Schedule
              $baseStart = '09:00';
              $baseEnd = '18:00';
              $isActive = true;
+             $isOverride = false;
 
-             // Check specific date override (instructor_schedules)
+             // Check specific date override
              $stmtOverride = $pdo->prepare("SELECT * FROM instructor_schedules WHERE instructor_id = ? AND schedule_date = ?");
              $stmtOverride->execute([$instructorId, $date]);
              $override = $stmtOverride->fetch();
 
              if ($override) {
-                 // Use override
                  $isActive = (bool)$override['is_active'];
-                 $baseStart = substr($override['start_time'], 0, 5); // HH:MM
+                 $baseStart = substr($override['start_time'], 0, 5);
                  $baseEnd = substr($override['end_time'], 0, 5);
+                 $isOverride = true;
              } else {
                  // Fallback to Weekly Template
                  $dayOfWeek = date('w', strtotime($date)); // 0 (Sun) - 6 (Sat)
@@ -116,22 +130,14 @@ try {
                      $baseStart = substr($template['start_time'], 0, 5);
                      $baseEnd = substr($template['end_time'], 0, 5);
                  } else {
-                     // No template: default to Standard Hours or Closed?
-                     // Let's assume standard 9-18 M-F, closed weekends if no template exists?
-                     // Or just default 9-18. User complained "Available every day".
-                     // If they set templates for Mon-Fri, Sat/Sun are missing -> Closed.
-                     // Logic: If ANY template exists for this instructor, and this day is missing, treat as CLOSED.
-                     // If NO templates exist at all, default to 9-18 M-F?
-
+                     // Logic: If ANY template exists, missing day = closed. If NO templates, default M-F 9-18.
                      $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM availabilities WHERE instructor_id = ?");
                      $stmtCount->execute([$instructorId]);
                      $hasAnyTemplate = $stmtCount->fetchColumn() > 0;
 
                      if ($hasAnyTemplate) {
-                         $isActive = false; // Closed if not defined in template
+                         $isActive = false; // Closed if not in template
                      } else {
-                         // Default logic if completely unconfigured
-                         // M-F 9-18, Sat/Sun Closed
                          $isActive = ($dayOfWeek >= 1 && $dayOfWeek <= 5);
                      }
                  }
@@ -139,12 +145,14 @@ try {
 
              // If specifically requesting details for editing (frontend admin/instructor)
              if ($mode === 'details') {
-                 // Return the configuration state (active, start, end)
+                 // Map to Frontend Expected Structure
                  echo json_encode([
-                     'is_active' => $isActive,
-                     'start_time' => $baseStart,
-                     'end_time' => $baseEnd,
-                     'override_id' => $override['id'] ?? null // To know if it's an override
+                     'effective' => [
+                         'is_active' => $isActive,
+                         'start_time' => $baseStart,
+                         'end_time' => $baseEnd
+                     ],
+                     'is_override' => $isOverride
                  ]);
                  exit;
              }
@@ -163,7 +171,6 @@ try {
              $stmtBooked->execute([$instructorId, $date]);
              $booked = $stmtBooked->fetchAll(PDO::FETCH_COLUMN);
 
-             // Normalize booked times to HH:MM
              $booked = array_map(function($t) { return substr($t, 0, 5); }, $booked);
 
              $available = array_values(array_diff($allSlots, $booked));
@@ -198,13 +205,17 @@ try {
             $stmtInsert = $pdo->prepare("INSERT INTO availabilities (id, tenant_id, instructor_id, day_of_week, start_time, end_time, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)");
 
             foreach ($days as $day) {
-                if (!isset($day['day_of_week'])) continue;
-                $uuid = Database::generateUuid();
-                $isActive = $day['is_active'] ? 1 : 0; // Handle boolean
-                $start = $day['start_time'] ?? '09:00';
-                $end = $day['end_time'] ?? '18:00';
+                // Map Frontend keys (day, active, start, end) to DB (day_of_week, is_active, start_time, end_time)
+                if (!isset($day['day'])) continue; // Frontend sends 'day' not 'day_of_week'
 
-                $stmtInsert->execute([$uuid, $user['tenant_id'], $instructorId, $day['day_of_week'], $start, $end, $isActive]);
+                $uuid = Database::generateUuid();
+                // Check both keys to be safe
+                $isActive = ($day['active'] ?? $day['is_active'] ?? false) ? 1 : 0;
+                $start = $day['start'] ?? $day['start_time'] ?? '09:00';
+                $end = $day['end'] ?? $day['end_time'] ?? '18:00';
+                $dayOfWeek = $day['day']; // 0-6
+
+                $stmtInsert->execute([$uuid, $user['tenant_id'], $instructorId, $dayOfWeek, $start, $end, $isActive]);
             }
         }
         // Save Specific Day Override
@@ -216,9 +227,10 @@ try {
             $stmtCheck->execute([$instructorId, $date]);
             $existingId = $stmtCheck->fetchColumn();
 
-            $isActive = !empty($input['is_active']) ? 1 : 0;
-            $start = $input['start_time'] ?? '09:00';
-            $end = $input['end_time'] ?? '18:00';
+            // Map Frontend keys (active) to DB (is_active)
+            $isActive = ($input['active'] ?? $input['is_active'] ?? false) ? 1 : 0;
+            $start = $input['start'] ?? $input['start_time'] ?? '09:00';
+            $end = $input['end'] ?? $input['end_time'] ?? '18:00';
 
             if ($existingId) {
                 $pdo->prepare("UPDATE instructor_schedules SET is_active = ?, start_time = ?, end_time = ? WHERE id = ?")

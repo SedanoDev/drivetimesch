@@ -44,3 +44,9 @@ The easiest way to run the project is using Docker. This ensures all dependencie
 
 -   **"Database Connection Failed":** Ensure the Docker containers are running (`docker-compose ps`).
 -   **Rebuilding:** If you change dependencies, run `docker-compose up --build -d`.
+-   **Reloading the Database Schema:** If you make changes to `database/schema_mysql.sql` (like adding new seed data) and need to apply them, you must destroy the existing Docker volume. Run:
+    ```bash
+    docker-compose down -v
+    docker-compose up -d
+    ```
+    *Warning: This will delete all existing data in your local development database.*

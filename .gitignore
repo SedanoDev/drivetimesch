@@ -4,6 +4,11 @@
 /node_modules/
 .DS_Store
 
+# Ignore environment files globally
+.env
+.env.*
+!.env.example
+
 # Ignore Composer Dependencies
 drivetime-backend/vendor/
 drivetime-backend/composer.lock

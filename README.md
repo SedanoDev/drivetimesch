@@ -2,9 +2,9 @@
 
 A robust, multi-tenant driving school management system built with PHP (Backend) and React (Frontend).
 
-## 🌐 Live Demo
+## 🌐 Demo en Vivo
 
-Check out the live demo of the application here: [http://18.201.99.184:5173/](http://18.201.99.184:5173/)
+Puedes probar la demo en vivo de la aplicación aquí: [http://18.201.99.184:5173/](http://18.201.99.184:5173/)
 
 ## 🚀 Quick Start (Docker)
 
@@ -49,136 +49,71 @@ The easiest way to run the project is using Docker. This ensures all dependencie
 -   **"Database Connection Failed":** Ensure the Docker containers are running (`docker-compose ps`).
 -   **Rebuilding:** If you change dependencies, run `docker-compose up --build -d`.
 
-## 🖥️ Manual Setup (Ubuntu Server / LAMP Stack)
+## 🖥️ Instalación en Ubuntu Server (con Docker)
 
-If you prefer not to use Docker, you can set up DriveTime on an Ubuntu server running a standard LAMP stack.
+A continuación se detallan los pasos para desplegar DriveTime en un servidor Ubuntu utilizando Docker, que es la forma recomendada y más sencilla de poner la aplicación en marcha.
 
-### 1. Install Prerequisites
+### 1. Instalar Docker y Docker Compose
 
-Install Apache, MySQL, PHP, and required extensions:
+Si tu servidor Ubuntu aún no tiene Docker instalado, ejecuta los siguientes comandos:
 
 ```bash
+# Actualizar los paquetes del sistema
+sudo apt update && sudo apt upgrade -y
+
+# Instalar dependencias necesarias
+sudo apt install ca-certificates curl gnupg lsb-release git unzip -y
+
+# Añadir la clave GPG oficial de Docker
+sudo mkdir -m 0755 -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# Configurar el repositorio de Docker
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Instalar Docker Engine, CLI y Docker Compose
 sudo apt update
-sudo apt install apache2 mysql-server php libapache2-mod-php php-mysql php-xml php-mbstring php-curl unzip git
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+
+# Asegurarse de que el servicio de Docker esté corriendo
+sudo systemctl enable docker
+sudo systemctl start docker
 ```
 
-Install Composer (PHP dependency manager):
+*Nota: Para ejecutar comandos de docker sin `sudo`, puedes añadir tu usuario al grupo docker: `sudo usermod -aG docker $USER` y reiniciar sesión.*
+
+### 2. Clonar el Repositorio
+
+Clona el código fuente en tu servidor:
 
 ```bash
-php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-php -r "unlink('composer-setup.php');"
-```
-
-Install Node.js and pnpm (for the frontend):
-
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-sudo npm install -g pnpm
-```
-
-### 2. Clone the Repository
-
-Clone the project into your web directory:
-
-```bash
-cd /var/www/html
-sudo git clone https://github.com/SedanoDev/drivetimesch.git drivetime
+git clone https://github.com/SedanoDev/drivetimesch.git drivetime
 cd drivetime
 ```
 
-### 3. Backend Setup
+### 3. Ejecutar el Script de Configuración
 
-Install PHP dependencies using Composer:
-
-```bash
-cd drivetime-backend
-composer install
-```
-
-Configure backend environment variables:
+El proyecto incluye un script automatizado que construye los contenedores, instala las dependencias (como Composer) e inicializa la base de datos.
 
 ```bash
-cp .env.example .env
-# Edit .env to set your database credentials and generate a JWT_SECRET
-nano .env
+# Dar permisos de ejecución al script si es necesario
+chmod +x setup_project.sh
+
+# Ejecutar el script
+./setup_project.sh
 ```
 
-### 4. Database Setup
+El script se encargará de:
+1. Generar variables de entorno (como `JWT_SECRET` y credenciales de BD).
+2. Levantar los contenedores de Docker (Apache, PHP, MySQL, Frontend).
+3. Instalar las dependencias de PHP usando Composer.
+4. Inicializar la base de datos y cargar los datos de ejemplo.
 
-Create the database and run the setup script to initialize the schema and seed data. Update the script or run it from the command line:
+### 4. Acceder a la Aplicación
 
-```bash
-# From the root directory or database folder:
-php setup_db.php
-```
-*(Make sure to configure the database credentials in `setup_db.php` or your `.env` so the script can connect to MySQL)*
+Una vez que el script finalice correctamente, la aplicación estará disponible en la IP o dominio de tu servidor en los siguientes puertos:
 
-### 5. Frontend Setup
+-   **Frontend:** `http://<IP_DE_TU_SERVIDOR>:5173`
+-   **API (Backend):** `http://<IP_DE_TU_SERVIDOR>:8000/api`
 
-Install Node dependencies and build the frontend:
-
-```bash
-cd ../drivetime-frontend
-cp .env.example .env
-# Edit .env and ensure VITE_API_URL is set correctly (e.g., /api)
-nano .env
-
-pnpm install
-pnpm run build
-```
-
-### 6. Apache Configuration
-
-Configure an Apache VirtualHost. Crucially, define the Alias for the backend API **before** the DocumentRoot block for the frontend.
-
-Create a new configuration file:
-
-```bash
-sudo nano /etc/apache2/sites-available/drivetime.conf
-```
-
-Add the following configuration (adjust paths and server names as needed):
-
-```apache
-<VirtualHost *:80>
-    ServerName yourdomain.com
-    # ServerAlias www.yourdomain.com
-
-    # Backend API Alias (Must come before DocumentRoot)
-    Alias /api /var/www/html/drivetime/drivetime-backend/api
-    <Directory /var/www/html/drivetime/drivetime-backend/api>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-
-    # Frontend DocumentRoot
-    DocumentRoot /var/www/html/drivetime/drivetime-frontend/dist
-    <Directory /var/www/html/drivetime/drivetime-frontend/dist>
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-
-        # Fallback routing for React Router
-        RewriteEngine On
-        RewriteCond %{REQUEST_FILENAME} !-f
-        RewriteCond %{REQUEST_FILENAME} !-d
-        RewriteRule ^ index.html [QSA,L]
-    </Directory>
-
-    ErrorLog ${APACHE_LOG_DIR}/drivetime_error.log
-    CustomLog ${APACHE_LOG_DIR}/drivetime_access.log combined
-</VirtualHost>
-```
-
-Enable the site and required modules, then restart Apache:
-
-```bash
-sudo a2enmod rewrite
-sudo a2ensite drivetime.conf
-sudo systemctl restart apache2
-```
-
-Your DriveTime application should now be accessible at your configured domain!
+*(Asegúrate de que los puertos 5173 y 8000 estén abiertos en el firewall o grupo de seguridad de tu servidor)*

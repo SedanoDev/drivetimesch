@@ -6,7 +6,9 @@ $allowed_origins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://localhost',
-    'http://127.0.0.1'
+    'http://127.0.0.1',
+    'http://18.201.99.184:5173',
+    'http://18.201.99.184'
 ];
 
 // 1. Remove ANY existing headers set by Apache/Server config to prevent duplicates

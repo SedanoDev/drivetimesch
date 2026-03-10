@@ -44,7 +44,7 @@ services:
       - ./drivetime-frontend:/app
       - /app/node_modules
     environment:
-      VITE_API_URL: http://localhost:8000/api
+      VITE_API_URL: http://18.201.99.184:8000/api
     depends_on:
       - backend
 
